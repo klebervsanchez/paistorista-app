@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paitorista</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
@@ -19,7 +19,7 @@
     <button id="login-button">Entrar com Google</button>
   </div>
 
-  <!-- INTERFACE PRINCIPAL (OCULTA INICIALMENTE) -->
+  <!-- TELA PRINCIPAL -->
   <div id="app-container" class="hidden">
     <div class="input-group">
       <input type="text" id="origem" placeholder="Endereço de origem">
@@ -27,11 +27,12 @@
     </div>
 
     <input type="text" id="destino" placeholder="Endereço de destino">
-
     <input type="time" id="horario">
 
-    <button id="salvar-rota">💾 Salvar rota</button>
-    <button id="tracar-rota">🗺️ Traçar rota no mapa</button>
+    <div class="btn-group">
+      <button id="salvar-rota">💾 Salvar rota</button>
+      <button id="tracar-rota">🗺️ Traçar rota no mapa</button>
+    </div>
 
     <div id="mapa" style="height: 300px; margin-top: 1rem;"></div>
 
