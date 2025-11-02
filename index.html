@@ -2,43 +2,51 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Paistorista - Caronas Escolares</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paitorista</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="container">
-    <h1>🚗 Paistorista</h1>
-    <p>Organize caronas escolares com segurança e praticidade</p>
-
-    <!-- ✅ ID corrigido aqui -->
-    <button id="loginBtn" class="btn-primary">Entrar com Google</button>
-
-    <div id="user-panel" class="hidden">
-      <p>Bem-vindo, <span id="user-name"></span>!</p>
-      <button id="logout" class="btn-outline">Sair</button>
-
-      <div id="rota-panel" class="hidden">
-        <h2>Cadastro de Rota</h2>
-        <input type="text" id="origem" placeholder="Origem" />
-        <input type="text" id="destino" placeholder="Destino" />
-        <input type="time" id="horario" placeholder="Horário" />
-        <button id="salvar-rota" class="btn-primary">Salvar Rota</button>
-
-        <h3>Minhas Caronas</h3>
-        <ul id="lista-rotas" class="lista-rotas"></ul>
-      </div>
-    </div>
-
-    <div id="map" class="map-box hidden"></div>
+  <!-- TELA DE LOGIN -->
+  <div id="loginScreen">
+    <header>
+      <h1>🚗 <span class="app-title">Paitorista</span></h1>
+      <p>Organize caronas escolares com segurança e praticidade</p>
+      <button id="loginBtn">Entrar com Google</button>
+    </header>
   </div>
 
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="main.js"></script>
+  <!-- APP PRINCIPAL (oculto até login) -->
+  <main id="mainApp" style="display: none;">
+    <h2>🚘 Bem-vindo ao Paitorista</h2>
 
-  <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&callback=showLocation">
-  </script>
+    <div class="input-group">
+      <input type="text" id="origem" class="input" placeholder="Endereço de origem" />
+      <button onclick="usarLocalizacaoAtual()" class="btn-localizacao">📍 Usar localização atual</button>
+      <input type="text" id="destino" class="input" placeholder="Endereço de destino" />
+      <input type="time" id="horario" class="input" />
+    </div>
+
+    <button onclick="salvarRota()" class="btn-salvar">💾 Salvar rota</button>
+    <button onclick="tracarRota()" class="btn-tracar">🗺️ Traçar rota no mapa</button>
+
+    <ul id="listaRotas" class="lista-rotas"></ul>
+
+    <div id="map"></div>
+
+    <!-- CHAT -->
+    <div id="chatBox">
+      <h3>💬 Chat</h3>
+      <div id="mensagens" class="mensagens-box"></div>
+      <input type="text" id="mensagemInput" class="mensagem-input" placeholder="Digite sua mensagem" />
+      <button onclick="enviarMensagem()">Enviar</button>
+    </div>
+
+    <button id="logoutBtn" class="btn-logout">Sair</button>
+  </main>
+
+  <script type="module" src="./firebase-config.js"></script>
+  <script type="module" src="./main.js"></script>
+  <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&callback=initMap"></script>
 </body>
 </html>
