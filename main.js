@@ -1,152 +1,140 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
+import { auth, provider, db } from "./firebase-config.js";
+import {
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let map;
-let directionsRenderer;
-let directionsService;
+const loginBtn = document.getElementById("google-login");
+const logoutBtn = document.getElementById("logout");
+const userPanel = document.getElementById("user-panel");
+const userName = document.getElementById("user-name");
+const rotaPanel = document.getElementById("rota-panel");
 
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-    alert(`Bem-vindo, ${user.displayName}`);
-    document.getElementById("map").style.display = "block";
-    initMap();
-  } catch (error) {
-    alert("Erro ao fazer login: " + error.message);
-  }
+const origemInput = document.getElementById("origem");
+const destinoInput = document.getElementById("destino");
+const horarioInput = document.getElementById("horario");
+const salvarRotaBtn = document.getElementById("salvar-rota");
+const listaRotas = document.getElementById("lista-rotas");
+
+let currentUser = null;
+
+loginBtn.addEventListener("click", () => {
+  signInWithPopup(auth, provider)
+    .then((result) => showUser(result.user))
+    .catch((error) => console.error("Erro no login:", error));
 });
 
-window.initMap = async function () {
-  if (!navigator.geolocation) {
-    alert("Geolocalização não suportada.");
-    return;
-  }
+logoutBtn.addEventListener("click", () => {
+  signOut(auth)
+    .then(() => {
+      loginBtn.classList.remove("hidden");
+      userPanel.classList.add("hidden");
+      rotaPanel.classList.add("hidden");
+    })
+    .catch((error) => console.error("Erro ao sair:", error));
+});
 
-  navigator.geolocation.getCurrentPosition(async (position) => {
-    const { latitude, longitude } = position.coords;
+onAuthStateChanged(auth, (user) => {
+  if (user) showUser(user);
+});
 
-    map = new google.maps.Map(document.getElementById("map"), {
-      center: { lat: latitude, lng: longitude },
-      zoom: 14,
-    });
+function showUser(user) {
+  currentUser = user;
+  userName.textContent = user.displayName;
+  loginBtn.classList.add("hidden");
+  userPanel.classList.remove("hidden");
+  rotaPanel.classList.remove("hidden");
+  document.getElementById("map").classList.remove("hidden");
+  carregarRotas();
+  showLocation(); // Mostrar localização no login
+}
 
-    directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer();
-    directionsRenderer.setMap(map);
+salvarRotaBtn.addEventListener("click", async () => {
+  const origem = origemInput.value;
+  const destino = destinoInput.value;
+  const horario = horarioInput.value;
 
-    // Marcador do usuário atual
-    new google.maps.Marker({
-      position: { lat: latitude, lng: longitude },
-      map,
-      title: "Você está aqui!",
-    });
+  if (!origem || !destino || !horario) return;
 
-    // Salvar localização atual no Firestore
-    const user = auth.currentUser;
-    if (user) {
-      await addDoc(collection(db, "usuarios_ativos"), {
-        uid: user.uid,
-        nome: user.displayName,
-        latitude,
-        longitude,
-        timestamp: new Date()
-      });
-    }
-
-    // Mostrar todos usuários ativos
-    mostrarUsuariosAtivos();
+  await addDoc(collection(db, "rotas"), {
+    uid: currentUser.uid,
+    origem,
+    destino,
+    horario
   });
-};
 
-// Traçar rota de A até B
-window.traceRoute = async function () {
-  const origem = document.getElementById("origin").value;
-  const destino = document.getElementById("destination").value;
+  origemInput.value = "";
+  destinoInput.value = "";
+  horarioInput.value = "";
+  carregarRotas();
+});
 
-  if (!origem || !destino) {
-    alert("Preencha origem e destino!");
-    return;
-  }
-
-  const request = {
-    origin: origem,
-    destination: destino,
-    travelMode: google.maps.TravelMode.DRIVING,
-  };
-
-  directionsService.route(request, async (result, status) => {
-    if (status === "OK") {
-      directionsRenderer.setDirections(result);
-
-      // Salva no Firestore
-      const user = auth.currentUser;
-      if (user) {
-        await addDoc(collection(db, "rotas"), {
-          uid: user.uid,
-          nome: user.displayName,
-          origem,
-          destino,
-          rota: result.routes[0].overview_path.map((p) => ({
-            lat: p.lat(),
-            lng: p.lng()
-          })),
-          timestamp: new Date()
-        });
-      }
-
-      alert("Rota traçada e salva com sucesso!");
-    } else {
-      alert("Erro ao traçar rota: " + status);
-    }
-  });
-};
-
-// Mostrar todos usuários ativos no mapa
-async function mostrarUsuariosAtivos() {
-  const querySnapshot = await getDocs(collection(db, "usuarios_ativos"));
+async function carregarRotas() {
+  listaRotas.innerHTML = "";
+  const rotasRef = collection(db, "rotas");
+  const q = query(rotasRef, where("uid", "==", currentUser.uid));
+  const querySnapshot = await getDocs(q);
   querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    if (data.latitude && data.longitude) {
-      new google.maps.Marker({
-        position: { lat: data.latitude, lng: data.longitude },
-        map,
-        title: data.nome,
-        icon: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-      });
-    }
+    const rota = doc.data();
+    const li = document.createElement("li");
+    li.textContent = `Origem: ${rota.origem}, Destino: ${rota.destino}, Horário: ${rota.horario}`;
+    listaRotas.appendChild(li);
   });
 }
 
-window.usarLocalizacaoAtual = function () {
+// MAPA (Google Maps)
+let map;
+let marker;
+
+function initMap(lat, lng) {
+  const location = { lat, lng };
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: location,
+    zoom: 15,
+  });
+  marker = new google.maps.Marker({
+    position: location,
+    map: map,
+    title: "Você está aqui",
+  });
+}
+
+// Função chamada automaticamente pela API do Google Maps
+function showLocation() {
   if (!navigator.geolocation) {
-    alert("Geolocalização não é suportada neste navegador.");
+    alert("Seu navegador não suporta geolocalização.");
     return;
   }
 
-  navigator.geolocation.getCurrentPosition((position) => {
-    const { latitude, longitude } = position.coords;
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
 
-    const geocoder = new google.maps.Geocoder();
-    const latlng = { lat: latitude, lng: longitude };
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: latitude, lng: longitude },
+        zoom: 15,
+      });
 
-    geocoder.geocode({ location: latlng }, (results, status) => {
-      if (status === "OK" && results[0]) {
-        document.getElementById("origin").value = results[0].formatted_address;
-      } else {
-        alert("Não foi possível obter o endereço.");
-      }
-    });
-  }, (error) => {
-    alert("Erro ao obter localização: " + error.message);
-  });
-};
+      new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: map,
+        title: "Você está aqui!",
+      });
 
+      // Mostra o mapa se estiver oculto
+      document.getElementById("map").style.display = "block";
+    },
+    (error) => {
+      alert("Erro ao obter localização: " + error.message);
+    }
+  );
+}
