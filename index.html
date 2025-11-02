@@ -4,32 +4,42 @@
   <meta charset="UTF-8" />
   <title>Paistorista</title>
   <link rel="stylesheet" href="estilo.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>🚐 Paistorista</h1>
-  <button id="loginBtn">Entrar com Google</button>
+  <div class="container">
+    <h1>🚐 Paistorista</h1>
+    <button id="loginBtn" class="btn-google">Entrar com Google</button>
 
-  <h2>Cadastro de Rota</h2>
+    <div class="card">
+      <h2>Cadastro de Rota</h2>
 
-  <div style="display: flex; gap: 6px; margin-bottom: 10px;">
-    <input type="text" id="origem" placeholder="Origem" style="flex: 1;" />
-    <button onclick="usarLocalizacaoAtual()">📍</button>
-  </div>
+      <div class="input-group">
+        <input type="text" id="origem" placeholder="Origem" />
+        <button onclick="usarLocalizacaoAtual()" title="Usar localização atual">📍</button>
+      </div>
 
-  <input type="text" id="destino" placeholder="Destino" style="margin-bottom: 10px; width: 100%;" />
-  <input type="time" id="horario" style="margin-bottom: 10px; width: 100%;" />
-  <button onclick="salvarRota()">Salvar Rota</button>
-  <button onclick="tracarRota()">Traçar Rota</button>
+      <input type="text" id="destino" placeholder="Destino" />
+      <input type="time" id="horario" placeholder="Horário" />
 
-  <h3>🕓 Caronas disponíveis a partir do horário atual</h3>
-  <div id="map" style="width: 100%; height: 300px; margin-top: 20px; display: none;"></div>
+      <div class="btn-group">
+        <button onclick="salvarRota()" class="btn-primary">Salvar Rota</button>
+        <button onclick="tracarRota()" class="btn-outline">Traçar Rota</button>
+      </div>
+    </div>
 
-  <!-- Chat modal -->
-  <div id="chatBox" style="display:none; border:1px solid #ccc; padding:10px; margin-top:20px;">
-    <h4>Chat com <span id="chatCom"></span></h4>
-    <div id="mensagens" style="height:100px; overflow-y:auto; border:1px solid #eee; padding:5px;"></div>
-    <input type="text" id="mensagemInput" placeholder="Digite sua mensagem" />
-    <button onclick="enviarMensagem()">Enviar</button>
+    <h3>🕓 Caronas disponíveis</h3>
+    <div id="map" style="width: 100%; height: 300px; margin-top: 20px;"></div>
+
+    <!-- Chat -->
+    <div id="chatBox" class="chat-box">
+      <h4>Chat com <span id="chatCom"></span></h4>
+      <div id="mensagens" class="chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" id="mensagemInput" placeholder="Digite sua mensagem" />
+        <button onclick="enviarMensagem()">Enviar</button>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="main.js"></script>
