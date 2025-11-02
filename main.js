@@ -19,10 +19,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
-
+provider.setCustomParameters({
+  prompt: 'select_account',
+});
 let map, directionsService, directionsRenderer, currentUser;
 
 // 🔐 Login
+
 document.getElementById("loginBtn").addEventListener("click", async () => {
   try {
     const result = await signInWithPopup(auth, provider);
@@ -181,6 +184,3 @@ async function carregarMensagens() {
 
   document.getElementById("mensagens").innerHTML = msgs.join("<br>");
 }
-
-// Torna a função acessível ao callback da API do Google Maps
-window.showLocation = showLocation;
