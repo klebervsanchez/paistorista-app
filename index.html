@@ -1,50 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Paistorista - Caronas Escolares</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Paistorista</title>
+  <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
-  <div class="container">
-    <h1>🚗 Paistorista</h1>
-    <p>Organize caronas escolares com segurança e praticidade</p>
+  <h1>🚐 Paistorista</h1>
+  <button id="loginBtn">Entrar com Google</button>
 
-    <button id="google-login">Entrar com Google</button>
+  <h2>Cadastro de Rota</h2>
 
-    <div id="user-panel" class="hidden">
-      <p>Bem-vindo, <span id="user-name"></span>!</p>
-      <button id="logout">Sair</button>
+  <!-- ORIGEM + BOTÃO 📍 -->
+  <div style="display: flex; gap: 6px; align-items: center; margin-top: 10px;">
+    <input type="text" id="origin" placeholder="Origem" style="flex: 1;" />
+    <button type="button" onclick="usarLocalizacaoAtual()">📍</button>
+  </div>
 
-      <div id="rota-panel" class="hidden">
-        <h2>Cadastro de Rota</h2>
-        <input type="text" id="origem" placeholder="Origem" />
-        <input type="text" id="destino" placeholder="Destino" />
-        <input type="time" id="horario" placeholder="Horário" />
-        <button id="salvar-rota">Salvar Rota</button>
+  <!-- DESTINO -->
+  <input type="text" id="destination" placeholder="Destino" style="margin-top: 10px; width: 100%;" />
+  
+  <!-- BOTÃO TRAÇAR ROTA -->
+  <button onclick="traceRoute()" style="margin-top: 10px;">Traçar rota</button>
 
-        <h3>Rotas Salvas</h3>
-        <ul id="lista-rotas"></ul>
-      </div>
-    </div>
+  <!-- MAPA -->
+  <div id="map" style="width: 100%; height: 300px; margin-top: 20px; display: none;"></div>
 
-<!-- Google Maps -->
-<div style="margin-top: 20px;">
-  <input type="text" id="origin" placeholder="Endereço de origem" />
-  <input type="text" id="destination" placeholder="Destino" />
-  <button onclick="traceRoute()">Traçar rota</button>
-</div>
-
-<div id="map" style="width: 100%; height: 300px; display: none;"></div>
-
-
-  <script type="module" src="firebase-config.js"></script>
+  <!-- FIREBASE CONFIG -->
   <script type="module" src="main.js"></script>
 
-  <!-- Google Maps JS API (adicione sua API Key) -->
+  <!-- GOOGLE MAPS API -->
   <script async
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&callback=showLocation">
-</script>
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap&libraries=places">
+  </script>
 </body>
 </html>
