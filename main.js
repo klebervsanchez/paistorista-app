@@ -184,5 +184,8 @@ async function carregarMensagens() {
 
   document.getElementById("mensagens").innerHTML = msgs.join("<br>");
 }
-// 🔓 Expor a função para o callback do Google Maps
+
+// 🔓 Expor as funções que o HTML precisa acessar
+window.login = login;
 window.showLocation = initMap;
+
