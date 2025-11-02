@@ -108,18 +108,33 @@ function initMap(lat, lng) {
   });
 }
 
+// Função chamada automaticamente pela API do Google Maps
 function showLocation() {
-  const mapDiv = document.getElementById("map");
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        initMap(lat, lng);
-      },
-      () => alert("Erro ao acessar a localização.")
-    );
-  } else {
-    alert("Geolocalização não suportada.");
+  if (!navigator.geolocation) {
+    alert("Seu navegador não suporta geolocalização.");
+    return;
   }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: latitude, lng: longitude },
+        zoom: 15,
+      });
+
+      new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: map,
+        title: "Você está aqui!",
+      });
+
+      // Mostra o mapa se estiver oculto
+      document.getElementById("map").style.display = "block";
+    },
+    (error) => {
+      alert("Erro ao obter localização: " + error.message);
+    }
+  );
 }
