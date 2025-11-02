@@ -1,39 +1,25 @@
-// CONFIGURAÇÃO DO FIREBASE
 const firebaseConfig = {
   apiKey: "AIzaSyCT9QQ9-AUvngXp0c_7l9yQXpDk1seAgmw",
   authDomain: "paistorista-57706.firebaseapp.com",
-  databaseURL: "https://paistorista-57706-default-rtdb.firebaseio.com",
-  projectId: "paistorista-57706",
-  storageBucket: "paistorista-57706.appspot.com",
-  messagingSenderId: "993847153120",
-  appId: "1:993847153120:web:adc3ed34c0a8791c3485f5"
+  databaseURL: "https://paistorista-57706-default-rtdb.firebaseio.com"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-const loginContainer = document.getElementById('login-container');
-const appContainer = document.getElementById('app-container');
-
-// LOGIN
-document.getElementById('login-button').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    alert("Erro no login: " + err.message);
-  });
+// Protege a tela: só mostra se estiver logado
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    console.log("Usuário logado:", user.displayName);
+  }
 });
 
-// DETECTAR LOGIN AUTOMATICAMENTE
-auth.onAuthStateChanged(user => {
-  if (user) {
-    loginContainer.style.display = 'none';
-    appContainer.classList.remove('hidden');
-    initMap();
-  } else {
-    loginContainer.style.display = 'block';
-    appContainer.classList.add('hidden');
-  }
+// Logout
+document.getElementById("logout-button").addEventListener("click", () => {
+  auth.signOut().then(() => window.location.href = "login.html");
 });
 
 // MAPA

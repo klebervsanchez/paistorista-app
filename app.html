@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Paitorista - App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_MAPS&libraries=places"></script>
+</head>
+<body>
+  <div id="app-container">
+    <h1>🚗 Paitorista</h1>
+    <button id="logout-button">Sair</button>
+
+    <!-- Campos de origem, destino, horário -->
+    <input type="text" id="origem" placeholder="Endereço de origem">
+    <button id="localizacao-btn">📍 Usar localização atual</button>
+
+    <input type="text" id="destino" placeholder="Endereço de destino">
+    <input type="time" id="horario">
+
+    <!-- Botões -->
+    <button id="salvar-rota">💾 Salvar rota</button>
+    <button id="tracar-rota">🗺️ Traçar rota no mapa</button>
+
+    <!-- Mapa -->
+    <div id="mapa" style="height: 300px; margin-top: 1rem;"></div>
+
+    <!-- Chat -->
+    <div class="chat-container">
+      <div id="chat-mensagens" class="chat-mensagens"></div>
+      <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
+      <button id="chat-enviar">Enviar</button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
