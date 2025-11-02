@@ -1,0 +1,123 @@
+// CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCT9QQ9-AUvngXp0c_7l9yQXpDk1seAgmw",
+  authDomain: "paistorista-57706.firebaseapp.com",
+  databaseURL: "https://paistorista-57706-default-rtdb.firebaseio.com",
+  projectId: "paistorista-57706",
+  storageBucket: "paistorista-57706.appspot.com",
+  messagingSenderId: "993847153120",
+  appId: "1:993847153120:web:adc3ed34c0a8791c3485f5"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// ELEMENTOS
+const loginContainer = document.getElementById('login-container');
+const appContainer = document.getElementById('app-container');
+const loginBtn = document.getElementById('login-button');
+const localizacaoBtn = document.getElementById('localizacao-btn');
+const origemInput = document.getElementById('origem');
+const destinoInput = document.getElementById('destino');
+const horarioInput = document.getElementById('horario');
+const salvarBtn = document.getElementById('salvar-rota');
+const tracarBtn = document.getElementById('tracar-rota');
+const mapaDiv = document.getElementById('mapa');
+const chatInput = document.getElementById('chat-input');
+const chatBtn = document.getElementById('chat-enviar');
+const chatMensagens = document.getElementById('chat-mensagens');
+
+let mapa;
+let origemMarker;
+let destinoMarker;
+
+// LOGIN COM GOOGLE
+loginBtn.addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then(result => {
+      const nome = result.user.displayName;
+      alert(`Bem-vindo, ${nome}`);
+      loginContainer.style.display = 'none';
+      appContainer.classList.remove('hidden');
+      initMap();
+    })
+    .catch(error => {
+      alert(`Erro no login: ${error.message}`);
+    });
+});
+
+// INICIALIZAR MAPA
+function initMap() {
+  mapa = new google.maps.Map(mapaDiv, {
+    center: { lat: -23.55052, lng: -46.633308 },
+    zoom: 12
+  });
+}
+
+// LOCALIZAÇÃO ATUAL
+localizacaoBtn.addEventListener('click', () => {
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude } = pos.coords;
+    const latlng = new google.maps.LatLng(latitude, longitude);
+    new google.maps.Geocoder().geocode({ location: latlng }, (res, status) => {
+      if (status === 'OK' && res[0]) {
+        origemInput.value = res[0].formatted_address;
+      }
+    });
+  });
+});
+
+// TRAÇAR ROTA
+tracarBtn.addEventListener('click', () => {
+  const origem = origemInput.value;
+  const destino = destinoInput.value;
+  if (!origem || !destino) return alert("Preencha origem e destino.");
+
+  const directionsService = new google.maps.DirectionsService();
+  const directionsRenderer = new google.maps.DirectionsRenderer();
+  directionsRenderer.setMap(mapa);
+
+  directionsService.route({
+    origin: origem,
+    destination: destino,
+    travelMode: 'DRIVING'
+  }, (result, status) => {
+    if (status === 'OK') {
+      directionsRenderer.setDirections(result);
+    } else {
+      alert('Erro ao traçar rota: ' + status);
+    }
+  });
+});
+
+// SALVAR ROTA
+salvarBtn.addEventListener('click', () => {
+  const rota = {
+    origem: origemInput.value,
+    destino: destinoInput.value,
+    horario: horarioInput.value,
+    usuario: auth.currentUser.displayName
+  };
+  db.ref('rotas').push(rota);
+  alert("Rota salva!");
+});
+
+// ENVIAR MENSAGEM
+chatBtn.addEventListener('click', () => {
+  const msg = chatInput.value.trim();
+  if (!msg) return;
+  const nome = auth.currentUser.displayName;
+  db.ref('mensagens').push({ nome, msg });
+  chatInput.value = '';
+});
+
+// OUVIR NOVAS MENSAGENS
+db.ref('mensagens').on('child_added', snap => {
+  const { nome, msg } = snap.val();
+  const div = document.createElement('div');
+  div.textContent = `${nome}: ${msg}`;
+  chatMensagens.appendChild(div);
+  chatMensagens.scrollTop = chatMensagens.scrollHeight;
+});
