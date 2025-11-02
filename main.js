@@ -138,3 +138,27 @@ function showLocation() {
     }
   );
 }
+// Função para preencher automaticamente o campo de origem com endereço atual
+window.usarLocalizacaoAtual = function () {
+  if (!navigator.geolocation) {
+    alert("Geolocalização não suportada.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition((position) => {
+    const { latitude, longitude } = position.coords;
+
+    const geocoder = new google.maps.Geocoder();
+    const latlng = { lat: latitude, lng: longitude };
+
+    geocoder.geocode({ location: latlng }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        document.getElementById("origem").value = results[0].formatted_address;
+      } else {
+        alert("Não foi possível converter localização em endereço.");
+      }
+    });
+  }, (error) => {
+    alert("Erro ao obter localização: " + error.message);
+  });
+};

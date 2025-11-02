@@ -19,7 +19,10 @@
 
       <div id="rota-panel" class="hidden">
         <h2>Cadastro de Rota</h2>
-        <input type="text" id="origem" placeholder="Origem" />
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+  <input type="text" id="origem" placeholder="Origem" style="flex: 1;" />
+  <button type="button" onclick="usarLocalizacaoAtual()">📍</button>
+</div>
         <input type="text" id="destino" placeholder="Destino" />
         <input type="time" id="horario" placeholder="Horário" />
         <button id="salvar-rota">Salvar Rota</button>
