@@ -1,79 +1,96 @@
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f0f2f5;
   margin: 0;
   padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f0f2f5;
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: start;
-  height: 100vh;
-  padding-top: 30px;
+  min-height: 100vh;
 }
 
-.card, #app-container {
-  background: #fff;
+.container {
+  background: #ffffff;
   padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  max-width: 500px;
-  width: 100%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  max-width: 480px;
+  width: 90%;
   text-align: center;
 }
 
 h1 {
+  color: #2e7d32;
   margin-bottom: 0.5rem;
 }
 
+p {
+  margin-bottom: 1rem;
+  color: #555;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
 button {
-  padding: 10px 15px;
-  margin: 5px 0;
-  background: #2e7d32;
-  color: #fff;
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  margin-top: 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
-button:hover {
-  background: #1b5e20;
+.btn-primary {
+  background-color: #2e7d32;
+  color: white;
 }
 
-input[type="text"],
-input[type="time"] {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+.btn-primary:hover {
+  background-color: #256b27;
 }
 
-.input-group {
-  display: flex;
-  gap: 10px;
+.btn-outline {
+  background-color: white;
+  border: 2px solid #2e7d32;
+  color: #2e7d32;
 }
 
-.btn-group {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 10px;
+.btn-outline:hover {
+  background-color: #e8f5e9;
 }
 
 .hidden {
   display: none;
 }
 
-.chat-container {
-  margin-top: 20px;
+.lista-rotas {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
   text-align: left;
 }
 
-.chat-mensagens {
-  background: #e0f2f1;
+.lista-rotas li {
+  background: #f9f9f9;
+  margin-bottom: 8px;
   padding: 10px;
-  height: 150px;
-  overflow-y: auto;
   border-radius: 6px;
-  margin-bottom: 10px;
+  font-size: 0.95rem;
+}
+
+.map-box {
+  width: 100%;
+  height: 300px;
+  margin-top: 20px;
+  border-radius: 10px;
+  overflow: hidden;
 }
