@@ -2,40 +2,74 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Paitorista - App</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_MAPS&libraries=places"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>App - Paistorista</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet" />
+  <style>
+    #map {
+      width: 100%;
+      height: 400px;
+    }
+  </style>
 </head>
-<body>
-  <div id="app-container">
-    <h1>🚗 Paitorista</h1>
-    <button id="logout-button">Sair</button>
+<body class="grey lighten-4">
 
-    <!-- Campos de origem, destino, horário -->
-    <input type="text" id="origem" placeholder="Endereço de origem">
-    <button id="localizacao-btn">📍 Usar localização atual</button>
-
-    <input type="text" id="destino" placeholder="Endereço de destino">
-    <input type="time" id="horario">
-
-    <!-- Botões -->
-    <button id="salvar-rota">💾 Salvar rota</button>
-    <button id="tracar-rota">🗺️ Traçar rota no mapa</button>
-
-    <!-- Mapa -->
-    <div id="mapa" style="height: 300px; margin-top: 1rem;"></div>
-
-    <!-- Chat -->
-    <div class="chat-container">
-      <div id="chat-mensagens" class="chat-mensagens"></div>
-      <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
-      <button id="chat-enviar">Enviar</button>
+  <nav class="green darken-2">
+    <div class="nav-wrapper container">
+      <a href="#" class="brand-logo"><i class="material-icons">directions_car</i> Paistorista</a>
+      <ul class="right">
+        <li><a onclick="logout()"><i class="material-icons">logout</i></a></li>
+      </ul>
     </div>
+  </nav>
+
+  <div class="container section">
+    <div class="row">
+      <div class="input-field col s12 m6">
+        <input id="origin" type="text" placeholder="Endereço de origem">
+      </div>
+      <div class="input-field col s12 m6">
+        <input id="destination" type="text" placeholder="Endereço de destino">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s12 m6">
+        <button class="btn blue" onclick="useCurrentLocation()">
+          <i class="material-icons left">my_location</i> Localização atual
+        </button>
+      </div>
+      <div class="col s12 m6">
+        <button class="btn green" onclick="traceRoute()">
+          <i class="material-icons left">map</i> Traçar rota
+        </button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col s12 m6">
+        <button class="btn purple" onclick="saveRoute()">
+          <i class="material-icons left">save</i> Salvar carona
+        </button>
+      </div>
+      <div class="col s12 m6">
+        <button class="btn orange" onclick="showSavedRoutes()">
+          <i class="material-icons left">visibility</i> Ver caronas
+        </button>
+      </div>
+    </div>
+
+    <div id="map" class="z-depth-1"></div>
+
   </div>
 
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY&callback=initMap" async defer></script>
   <script src="main.js"></script>
 </body>
 </html>
