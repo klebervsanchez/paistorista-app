@@ -1,119 +1,97 @@
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ✅ Corrigido: Verificação de autenticação e redirecionamento
+auth.onAuthStateChanged(user => {
+  if (user) {
+    window.location.href = "app.html";
+  } else {
+    window.location.href = "login.html";
+  }
+});
+
+// Código abaixo será usado apenas em app.html após login
 let map;
 let directionsService;
 let directionsRenderer;
-let markers = [];
 
 function initMap() {
-  const defaultPos = { lat: -23.55052, lng: -46.633308 };
-
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 13,
-    center: defaultPos,
-  });
-
   directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({ map });
-
-  // 🔄 Autocomplete nos inputs
-  new google.maps.places.Autocomplete(document.getElementById("origin"));
-  new google.maps.places.Autocomplete(document.getElementById("destination"));
-
-  // 📍 Localização atual
-  document.getElementById("btn-location").addEventListener("click", () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const pos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-
-          map.setCenter(pos);
-          new google.maps.Marker({ position: pos, map, title: "Você está aqui" });
-          document.getElementById("origin").value = `${pos.lat}, ${pos.lng}`;
-        },
-        () => alert("Não foi possível obter sua localização.")
-      );
-    } else {
-      alert("Geolocalização não suportada.");
-    }
+  directionsRenderer = new google.maps.DirectionsRenderer();
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: -23.5505, lng: -46.6333 },
+    zoom: 12
   });
-
-  // 🗺️ Traçar rota
-  document.getElementById("btn-route").addEventListener("click", () => {
-    const origem = document.getElementById("origin").value;
-    const destino = document.getElementById("destination").value;
-
-    if (!origem || !destino) {
-      M.toast({ html: "Preencha origem e destino!" });
-      return;
-    }
-
-    const request = {
-      origin: origem,
-      destination: destino,
-      travelMode: google.maps.TravelMode.DRIVING,
-    };
-
-    directionsService.route(request, (result, status) => {
-      if (status === google.maps.DirectionsStatus.OK) {
-        directionsRenderer.setDirections(result);
-      } else {
-        alert("Não foi possível traçar a rota.");
-      }
-    });
-  });
-
-  // 💾 Salvar carona
-  document.getElementById("btn-save").addEventListener("click", () => {
-    const origem = document.getElementById("origin").value;
-    const destino = document.getElementById("destination").value;
-
-    if (!origem || !destino) return;
-
-    firebase.firestore().collection("caronas").add({
-      origem,
-      destino,
-      data: new Date(),
-      user: firebase.auth().currentUser.email,
-    }).then(() => {
-      M.toast({ html: "Carona salva!" });
-      loadRides(); // Atualizar mapa
-    });
-  });
-
-  // 🚪 Logout
-  document.getElementById("btn-logout").addEventListener("click", () => {
-    firebase.auth().signOut().then(() => {
-      window.location.href = "login.html";
-    });
-  });
-
-  // 📦 Carregar caronas salvas
-  loadRides();
+  directionsRenderer.setMap(map);
 }
 
-function loadRides() {
-  // Limpa marcadores antigos
-  markers.forEach(m => m.setMap(null));
-  markers = [];
+function useCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      const latlng = `${position.coords.latitude},${position.coords.longitude}`;
+      document.getElementById("origin").value = latlng;
+      map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
+    },
+    error => alert("Erro ao obter localização")
+  );
+}
 
-  firebase.firestore().collection("caronas").get().then(snapshot => {
+function traceRoute() {
+  const origin = document.getElementById("origin").value;
+  const destination = document.getElementById("destination").value;
+  if (!origin || !destination) {
+    alert("Preencha origem e destino");
+    return;
+  }
+  directionsService.route({
+    origin,
+    destination,
+    travelMode: "DRIVING"
+  }, (result, status) => {
+    if (status === "OK") {
+      directionsRenderer.setDirections(result);
+    } else {
+      alert("Erro ao traçar rota: " + status);
+    }
+  });
+}
+
+function saveRoute() {
+  const origin = document.getElementById("origin").value;
+  const destination = document.getElementById("destination").value;
+  const user = auth.currentUser;
+  if (origin && destination && user) {
+    db.collection("caronas").add({
+      uid: user.uid,
+      origem: origin,
+      destino: destination,
+      criadoEm: new Date()
+    }).then(() => {
+      M.toast({ html: "Carona salva!" });
+    }).catch(err => alert("Erro: " + err));
+  } else {
+    alert("Preencha origem, destino e esteja logado.");
+  }
+}
+
+function showSavedRoutes() {
+  db.collection("caronas").get().then(snapshot => {
     snapshot.forEach(doc => {
       const data = doc.data();
-
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ address: data.origem }, (results, status) => {
-        if (status === "OK") {
-          const marker = new google.maps.Marker({
-            position: results[0].geometry.location,
-            map,
-            title: `Origem: ${data.origem}\nDestino: ${data.destino}`,
-            icon: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-          });
-          markers.push(marker);
-        }
+      new google.maps.Marker({
+        position: {
+          lat: parseFloat(data.origem.split(',')[0]),
+          lng: parseFloat(data.origem.split(',')[1])
+        },
+        map: map,
+        title: `Destino: ${data.destino}`
       });
     });
+  });
+}
+
+function logout() {
+  auth.signOut().then(() => {
+    window.location.href = "login.html";
   });
 }
