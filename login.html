@@ -21,13 +21,14 @@
   <script>
     function login() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider)
-        .then(result => {
-          alert("Bem-vindo, " + result.user.displayName);
-          window.location.href = "app.html";
-        })
+firebase.auth().signInWithPopup(provider)
+  .then(result => {
+    alert("Bem-vindo, " + result.user.displayName);
+    window.location.href = "app.html";
+  })
         .catch(error => alert("Erro: " + error.message));
     }
   </script>
 </body>
 </html>
+
