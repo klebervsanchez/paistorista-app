@@ -3,7 +3,7 @@ let directionsService;
 let directionsRenderer;
 
 function initMap() {
-    // Posição padrão caso geolocalização falhe
+  // Posição padrão caso geolocalização falhe
   const defaultPos = { lat: -23.55052, lng: -46.633308 };
 
   map = new google.maps.Map(document.getElementById("map"), {
@@ -14,7 +14,14 @@ function initMap() {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  // Botão de localização atual
+  // ✅ Autocomplete nos campos de origem e destino
+  const originInput = document.getElementById("origin");
+  const destinationInput = document.getElementById("destination");
+
+  const autocompleteOrigin = new google.maps.places.Autocomplete(originInput);
+  const autocompleteDestination = new google.maps.places.Autocomplete(destinationInput);
+
+  // 📍 Botão de localização atual
   document.getElementById("btn-location").addEventListener("click", () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -31,8 +38,7 @@ function initMap() {
             title: "Sua localização",
           });
 
-          document.getElementById("origin").value =
-            `${currentPos.lat}, ${currentPos.lng}`;
+          originInput.value = `${currentPos.lat}, ${currentPos.lng}`;
         },
         () => alert("Erro ao obter localização.")
       );
@@ -41,10 +47,10 @@ function initMap() {
     }
   });
 
-  // Botão traçar rota
+  // 🧭 Botão traçar rota
   document.getElementById("btn-route").addEventListener("click", () => {
-    const origem = document.getElementById("origin").value;
-    const destino = document.getElementById("destination").value;
+    const origem = originInput.value;
+    const destino = destinationInput.value;
 
     if (!origem || !destino) {
       alert("Preencha origem e destino!");
@@ -66,19 +72,17 @@ function initMap() {
     });
   });
 
-  // Botão salvar (simulado)
+  // 💾 Botão salvar (simulado)
   document.getElementById("btn-save").addEventListener("click", () => {
-    const origem = document.getElementById("origin").value;
-    const destino = document.getElementById("destination").value;
+    const origem = originInput.value;
+    const destino = destinationInput.value;
     alert(`Carona salva!\nOrigem: ${origem}\nDestino: ${destino}`);
   });
 
-  // Botão logout
+  // 🔒 Botão logout
   document.getElementById("btn-logout").addEventListener("click", () => {
     firebase.auth().signOut().then(() => {
       window.location.href = "login.html";
     });
   });
 }
-
-
