@@ -1,119 +1,89 @@
-let map;
-let directionsService;
-let directionsRenderer;
+let map, directionsService, directionsRenderer;
 
 function initMap() {
   const defaultPos = { lat: -23.55052, lng: -46.633308 };
-
   map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 14,
     center: defaultPos,
+    zoom: 14,
   });
-
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  // ✅ Autocomplete com Google Places
-  const originInput = document.getElementById("origin");
-  const destinationInput = document.getElementById("destination");
+  new google.maps.places.Autocomplete(document.getElementById("origin"));
+  new google.maps.places.Autocomplete(document.getElementById("destination"));
 
-  new google.maps.places.Autocomplete(originInput);
-  new google.maps.places.Autocomplete(destinationInput);
+  document.getElementById("btn-location").addEventListener("click", usarLocalizacaoAtual);
+  document.getElementById("btn-route").addEventListener("click", traçarRota);
+  document.getElementById("btn-save").addEventListener("click", salvarCarona);
+  document.getElementById("btn-logout").addEventListener("click", sair);
+}
 
-  // 📍 Localização atual + geocoder reverso
-  const btnLocation = document.getElementById("btn-location");
-  if (btnLocation) {
-    btnLocation.addEventListener("click", () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            const currentPos = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-
-            map.setCenter(currentPos);
-            new google.maps.Marker({
-              position: currentPos,
-              map,
-              title: "Sua localização"
-            });
-
-            // Obter endereço da coordenada
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: currentPos }, (results, status) => {
-              if (status === "OK" && results[0]) {
-                originInput.value = results[0].formatted_address;
-              } else {
-                alert("Não foi possível encontrar o endereço.");
-              }
-            });
-          },
-          error => {
-            alert("Erro ao obter localização: " + error.message);
-          }
-        );
-      } else {
-        alert("Geolocalização não suportada neste navegador.");
-      }
-    });
-  }
-
-  // 🗺️ Traçar rota
-  const btnRoute = document.getElementById("btn-route");
-  if (btnRoute) {
-    btnRoute.addEventListener("click", () => {
-      const origem = originInput.value.trim();
-      const destino = destinationInput.value.trim();
-
-      if (!origem || !destino) {
-        alert("Preencha os campos de origem e destino.");
-        return;
-      }
-
-      const request = {
-        origin: origem,
-        destination: destino,
-        travelMode: google.maps.TravelMode.DRIVING,
+function usarLocalizacaoAtual() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(position => {
+      const pos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
       };
+      map.setCenter(pos);
+      new google.maps.Marker({ position: pos, map, title: "Você está aqui" });
 
-      directionsService.route(request, (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK) {
-          directionsRenderer.setDirections(result);
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ location: pos }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          document.getElementById("origin").value = results[0].formatted_address;
         } else {
-          alert("Erro ao traçar rota: " + status);
+          alert("Endereço não encontrado.");
         }
       });
     });
   }
+}
 
-  // 💾 Simular salvar carona
-  const btnSave = document.getElementById("btn-save");
-  if (btnSave) {
-    btnSave.addEventListener("click", () => {
-      const origem = originInput.value;
-      const destino = destinationInput.value;
-      alert(`🚘 Carona salva!\nOrigem: ${origem}\nDestino: ${destino}`);
-    });
-  }
+function traçarRota() {
+  const origem = document.getElementById("origin").value;
+  const destino = document.getElementById("destination").value;
+  if (!origem || !destino) return alert("Preencha origem e destino.");
 
-  // 🔒 Logout (corrigido)
-  const btnLogout = document.getElementById("btn-logout");
-  if (btnLogout) {
-    btnLogout.addEventListener("click", () => {
-      if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().signOut()
-          .then(() => {
-            console.log("Logout realizado.");
-            window.location.href = "login.html";
-          })
-          .catch(error => {
-            console.error("Erro ao sair:", error);
-            alert("Erro ao sair: " + error.message);
-          });
-      } else {
-        alert("Firebase não carregado corretamente.");
-      }
-    });
-  }
+  const request = {
+    origin: origem,
+    destination: destino,
+    travelMode: "DRIVING",
+  };
+
+  directionsService.route(request, (result, status) => {
+    if (status === "OK") directionsRenderer.setDirections(result);
+    else alert("Erro ao traçar rota: " + status);
+  });
+}
+
+function salvarCarona() {
+  const origem = document.getElementById("origin").value;
+  const destino = document.getElementById("destination").value;
+  const escola = document.getElementById("school").value;
+  const vagas = parseInt(document.getElementById("vagas").value);
+  const encontrosPermitidos = document.getElementById("encontrosPermitidos").checked;
+  const user = firebase.auth().currentUser;
+
+  if (!user) return alert("Usuário não autenticado.");
+  if (!origem || !destino || !escola || !vagas) return alert("Preencha todos os campos.");
+
+  db.collection("caronas").add({
+    motorista: user.displayName,
+    uid: user.uid,
+    origem,
+    destino,
+    escola,
+    vagas,
+    vagasDisponiveis: vagas,
+    encontrosPermitidos,
+    status: "ativa",
+    rotaCriadaEm: new Date()
+  }).then(() => {
+    M.toast({ html: "✅ Carona cadastrada com sucesso!" });
+  }).catch(err => alert("Erro ao salvar carona: " + err.message));
+}
+
+function sair() {
+  firebase.auth().signOut().then(() => window.location.href = "login.html");
 }
