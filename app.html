@@ -1,60 +1,149 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>App - Paistorista</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="style.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <style>
+    #map { height: 400px; }
+  </style>
 </head>
 <body>
-  <nav class="navbar navbar-dark bg-success">
-    <div class="container-fluid">
-      <a class="navbar-brand"><i class="material-icons">directions_car</i> Paistorista</a>
-      <button class="btn btn-light" onclick="logout()"><i class="material-icons">logout</i> Sair</button>
-    </div>
-  </nav>
-
   <div class="container py-4">
-    <div class="row g-3">
+    <h2>🚗 Paistorista</h2>
+    <div class="row g-2">
       <div class="col-md-6">
-        <input id="origin" class="form-control" placeholder="Endereço de origem">
+        <input id="origem" class="form-control" placeholder="Endereço de origem" />
       </div>
       <div class="col-md-6">
-        <input id="destination" class="form-control" placeholder="Endereço de destino">
+        <input id="destino" class="form-control" placeholder="Endereço de destino" />
       </div>
-      <div class="col-md-4 d-grid">
-        <button class="btn btn-primary" onclick="useCurrentLocation()">
-          <i class="material-icons">my_location</i> Usar localização atual
-        </button>
+    </div>
+    <div class="row my-3 g-2">
+      <div class="col-md-3">
+        <button onclick="usarLocalizacao()" class="btn btn-info w-100">📍 Usar localização atual</button>
       </div>
-      <div class="col-md-4 d-grid">
-        <button class="btn btn-success" onclick="traceRoute()">
-          <i class="material-icons">map</i> Traçar rota
-        </button>
+      <div class="col-md-3">
+        <button onclick="tracarRota()" class="btn btn-primary w-100">🗺️ Traçar rota</button>
       </div>
-      <div class="col-md-4 d-grid">
-        <button class="btn btn-outline-success" onclick="saveRoute()">
-          <i class="material-icons">save</i> Salvar carona
-        </button>
+      <div class="col-md-3">
+        <button onclick="salvarRota()" class="btn btn-success w-100">💾 Salvar carona</button>
+      </div>
+      <div class="col-md-3">
+        <button onclick="logout()" class="btn btn-danger w-100">Sair</button>
       </div>
     </div>
 
-    <div class="my-4" id="map" style="height: 400px;"></div>
+    <div id="map" class="mb-3"></div>
 
-    <div class="d-grid">
-      <button class="btn btn-warning" onclick="showSavedRoutes()">
-        <i class="material-icons">visibility</i> Ver caronas salvas
-      </button>
+    <h5>💬 Chat</h5>
+    <div class="d-flex">
+      <input id="mensagem" class="form-control me-2" placeholder="Digite uma mensagem..." />
+      <button onclick="enviarMensagem()" class="btn btn-secondary">Enviar</button>
     </div>
+    <ul id="chat" class="mt-2 list-group"></ul>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <!-- Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY&libraries=places"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+  <!-- Scripts -->
   <script src="firebase-config.js"></script>
-  <script src="js/main.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY&callback=initMap" async defer></script>
+  <script>
+    const db = firebase.firestore();
+    let map, origemMarker, destinoMarker, directionsService, directionsRenderer;
+
+    function initMap() {
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer();
+
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: -23.55052, lng: -46.633308 },
+        zoom: 12,
+      });
+      directionsRenderer.setMap(map);
+    }
+
+    function usarLocalizacao() {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const { latitude, longitude } = pos.coords;
+        const latlng = new google.maps.LatLng(latitude, longitude);
+        new google.maps.Geocoder().geocode({ location: latlng }, (res, status) => {
+          if (status === "OK" && res[0]) {
+            document.getElementById("origem").value = res[0].formatted_address;
+          }
+        });
+      });
+    }
+
+    function tracarRota() {
+      const origem = document.getElementById("origem").value;
+      const destino = document.getElementById("destino").value;
+
+      directionsService.route({
+        origin: origem,
+        destination: destino,
+        travelMode: "DRIVING",
+      }, (result, status) => {
+        if (status === "OK") {
+          directionsRenderer.setDirections(result);
+        }
+      });
+    }
+
+    function salvarRota() {
+      const origem = document.getElementById("origem").value;
+      const destino = document.getElementById("destino").value;
+      const user = firebase.auth().currentUser;
+
+      if (!user) return alert("Você precisa estar logado.");
+      db.collection("caronas").add({
+        uid: user.uid,
+        origem,
+        destino,
+        horario: new Date()
+      }).then(() => alert("Carona salva com sucesso!"));
+    }
+
+    function enviarMensagem() {
+      const texto = document.getElementById("mensagem").value;
+      const user = firebase.auth().currentUser;
+      if (!texto || !user) return;
+
+      db.collection("chat").add({
+        uid: user.uid,
+        nome: user.displayName,
+        texto,
+        data: new Date()
+      });
+
+      document.getElementById("mensagem").value = "";
+    }
+
+    db.collection("chat").orderBy("data").onSnapshot(snapshot => {
+      const lista = document.getElementById("chat");
+      lista.innerHTML = "";
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const li = document.createElement("li");
+        li.className = "list-group-item";
+        li.textContent = `${msg.nome}: ${msg.texto}`;
+        lista.appendChild(li);
+      });
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+
+    window.onload = initMap;
+  </script>
 </body>
 </html>
