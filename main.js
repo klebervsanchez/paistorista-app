@@ -1,89 +1,67 @@
 let map, directionsService, directionsRenderer;
 
 function initMap() {
-  const defaultPos = { lat: -23.55052, lng: -46.633308 };
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: defaultPos,
-    zoom: 14,
-  });
+  const defaultPos = { lat: -23.5505, lng: -46.6333 };
+  map = new google.maps.Map(document.getElementById("map"), { zoom: 13, center: defaultPos });
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  new google.maps.places.Autocomplete(document.getElementById("origin"));
-  new google.maps.places.Autocomplete(document.getElementById("destination"));
+  const originInput = document.getElementById("origin");
+  new google.maps.places.Autocomplete(originInput);
 
-  document.getElementById("btn-location").addEventListener("click", usarLocalizacaoAtual);
-  document.getElementById("btn-route").addEventListener("click", traçarRota);
-  document.getElementById("btn-save").addEventListener("click", salvarCarona);
-  document.getElementById("btn-logout").addEventListener("click", sair);
-}
-
-function usarLocalizacaoAtual() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
-      const pos = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude
-      };
-      map.setCenter(pos);
-      new google.maps.Marker({ position: pos, map, title: "Você está aqui" });
+  document.getElementById("btn-location").addEventListener("click", () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      map.setCenter(current);
+      new google.maps.Marker({ map, position: current, title: "Sua localização" });
 
       const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: pos }, (results, status) => {
-        if (status === "OK" && results[0]) {
-          document.getElementById("origin").value = results[0].formatted_address;
-        } else {
-          alert("Endereço não encontrado.");
+      geocoder.geocode({ location: current }, (results, status) => {
+        if (status === "OK") {
+          originInput.value = results[0]?.formatted_address || "Localização atual";
         }
       });
     });
-  }
-}
-
-function traçarRota() {
-  const origem = document.getElementById("origin").value;
-  const destino = document.getElementById("destination").value;
-  if (!origem || !destino) return alert("Preencha origem e destino.");
-
-  const request = {
-    origin: origem,
-    destination: destino,
-    travelMode: "DRIVING",
-  };
-
-  directionsService.route(request, (result, status) => {
-    if (status === "OK") directionsRenderer.setDirections(result);
-    else alert("Erro ao traçar rota: " + status);
   });
-}
 
-function salvarCarona() {
-  const origem = document.getElementById("origin").value;
-  const destino = document.getElementById("destination").value;
-  const escola = document.getElementById("school").value;
-  const vagas = parseInt(document.getElementById("vagas").value);
-  const encontrosPermitidos = document.getElementById("encontrosPermitidos").checked;
-  const user = firebase.auth().currentUser;
+  document.getElementById("btn-route").addEventListener("click", () => {
+    const origin = originInput.value;
+    const school = document.getElementById("school").value;
+    if (!origin || !school) return alert("Preencha origem e destino");
 
-  if (!user) return alert("Usuário não autenticado.");
-  if (!origem || !destino || !escola || !vagas) return alert("Preencha todos os campos.");
+    directionsService.route({
+      origin: origin,
+      destination: school,
+      travelMode: google.maps.TravelMode.DRIVING
+    }, (result, status) => {
+      if (status === "OK") directionsRenderer.setDirections(result);
+      else alert("Erro ao traçar rota");
+    });
+  });
 
-  db.collection("caronas").add({
-    motorista: user.displayName,
-    uid: user.uid,
-    origem,
-    destino,
-    escola,
-    vagas,
-    vagasDisponiveis: vagas,
-    encontrosPermitidos,
-    status: "ativa",
-    rotaCriadaEm: new Date()
-  }).then(() => {
-    M.toast({ html: "✅ Carona cadastrada com sucesso!" });
-  }).catch(err => alert("Erro ao salvar carona: " + err.message));
-}
+  document.getElementById("btn-save").addEventListener("click", () => {
+    const school = document.getElementById("school").value;
+    const origin = originInput.value;
+    const vagas = parseInt(document.getElementById("vagas").value || "0");
 
-function sair() {
-  firebase.auth().signOut().then(() => window.location.href = "login.html");
+    const user = firebase.auth().currentUser;
+    if (!user || !school || !origin || vagas <= 0) return alert("Preencha todos os campos corretamente.");
+
+    firebase.firestore().collection("caronas").add({
+      uid: user.uid,
+      nomeMotorista: user.displayName,
+      origem: origin,
+      destino: school,
+      vagasDisponiveis: vagas,
+      vagasPreenchidas: 0,
+      status: "ativa",
+      criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+      M.toast({ html: "Carona oferecida com sucesso!" });
+    });
+  });
+
+  document.getElementById("btn-logout").addEventListener("click", () => {
+    firebase.auth().signOut().then(() => window.location.href = "login.html");
+  });
 }
