@@ -4,69 +4,73 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Paistorista - Mapa</title>
-
-  <!-- Materialize CSS (Material Design) -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-
-  <!-- Ícones Google -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
   <style>
     #map {
       height: 500px;
       width: 100%;
-      margin-top: 20px;
-    }
-    .btn {
-      margin-bottom: 10px;
     }
   </style>
 </head>
-<body class="grey lighten-4">
+<body class="bg-light">
+  <div class="container py-4">
+    <h2 class="mb-4 text-primary">
+      🚗 Paistorista
+    </h2>
 
-  <nav class="blue darken-1">
-    <div class="nav-wrapper container">
-      <a href="#" class="brand-logo">🚗 Paistorista</a>
-      <ul class="right">
-        <li><a id="btn-logout"><i class="material-icons">exit_to_app</i></a></li>
-      </ul>
-    </div>
-  </nav>
-
-  <div class="container">
-    <div class="row">
-      <div class="input-field col s12 m6">
-        <input id="origin" type="text" class="autocomplete">
-        <label for="origin">Endereço de origem</label>
+    <!-- Inputs de localização -->
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <input
+          type="text"
+          id="origin"
+          class="form-control"
+          placeholder="Endereço de origem"
+        />
       </div>
-
-      <div class="input-field col s12 m6">
-        <input id="destination" type="text" class="autocomplete">
-        <label for="destination">Endereço de destino</label>
+      <div class="col-md-6">
+        <input
+          type="text"
+          id="destination"
+          class="form-control"
+          placeholder="Endereço de destino"
+        />
       </div>
     </div>
 
-    <div class="row center-align">
-      <button id="btn-location" class="btn teal lighten-1"><i class="material-icons left">my_location</i>Usar localização atual</button>
-      <button id="btn-route" class="btn blue darken-1"><i class="material-icons left">directions</i>Traçar rota</button>
-      <button id="btn-save" class="btn green"><i class="material-icons left">save</i>Salvar carona</button>
+    <!-- Botões -->
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+      <button id="btn-location" class="btn btn-info text-white">
+        📍 Usar localização atual
+      </button>
+      <button id="btn-route" class="btn btn-primary">
+        🗺️ Traçar rota
+      </button>
+      <button id="btn-save" class="btn btn-success">
+        💾 Salvar carona
+      </button>
+      <button id="btn-logout" class="btn btn-danger ms-auto">
+        Sair
+      </button>
     </div>
 
     <!-- Mapa -->
-    <div id="map" class="z-depth-2"></div>
+    <div id="map" class="mb-4"></div>
   </div>
 
-  <!-- Scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Firebase config -->
   <script src="firebase-config.js"></script>
   <script src="main.js"></script>
 
-  <!-- Google Maps API com Places -->
+  <!-- Google Maps API (AJUSTE sua chave!) -->
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&libraries=places&callback=initMap"
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&libraries=places&callback=initMap"
     async
     defer
   ></script>
-
 </body>
 </html>
