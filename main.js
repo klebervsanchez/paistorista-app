@@ -13,14 +13,14 @@ function initMap() {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  // ✅ Autocomplete nos campos
+  // ✅ Autocomplete com Google Places
   const originInput = document.getElementById("origin");
   const destinationInput = document.getElementById("destination");
 
-  const autocompleteOrigin = new google.maps.places.Autocomplete(originInput);
-  const autocompleteDestination = new google.maps.places.Autocomplete(destinationInput);
+  new google.maps.places.Autocomplete(originInput);
+  new google.maps.places.Autocomplete(destinationInput);
 
-  // 📍 Botão de localização atual
+  // 📍 Localização atual + geocoder reverso
   const btnLocation = document.getElementById("btn-location");
   if (btnLocation) {
     btnLocation.addEventListener("click", () => {
@@ -29,47 +29,45 @@ function initMap() {
           position => {
             const currentPos = {
               lat: position.coords.latitude,
-              lng: position.coords.longitude
+              lng: position.coords.longitude,
             };
 
             map.setCenter(currentPos);
             new google.maps.Marker({
               position: currentPos,
-              map: map,
+              map,
               title: "Sua localização"
             });
 
-            // 🧭 Geocoder reverso
+            // Obter endereço da coordenada
             const geocoder = new google.maps.Geocoder();
             geocoder.geocode({ location: currentPos }, (results, status) => {
-              if (status === "OK") {
-                if (results[0]) {
-                  originInput.value = results[0].formatted_address;
-                } else {
-                  alert("Endereço não encontrado.");
-                }
+              if (status === "OK" && results[0]) {
+                originInput.value = results[0].formatted_address;
               } else {
-                alert("Erro ao obter endereço: " + status);
+                alert("Não foi possível encontrar o endereço.");
               }
             });
           },
-          () => alert("Erro ao obter localização.")
+          error => {
+            alert("Erro ao obter localização: " + error.message);
+          }
         );
       } else {
-        alert("Geolocalização não suportada.");
+        alert("Geolocalização não suportada neste navegador.");
       }
     });
   }
 
-  // 🧭 Botão traçar rota
+  // 🗺️ Traçar rota
   const btnRoute = document.getElementById("btn-route");
   if (btnRoute) {
     btnRoute.addEventListener("click", () => {
-      const origem = originInput.value;
-      const destino = destinationInput.value;
+      const origem = originInput.value.trim();
+      const destino = destinationInput.value.trim();
 
       if (!origem || !destino) {
-        alert("Preencha origem e destino!");
+        alert("Preencha os campos de origem e destino.");
         return;
       }
 
@@ -83,36 +81,38 @@ function initMap() {
         if (status === google.maps.DirectionsStatus.OK) {
           directionsRenderer.setDirections(result);
         } else {
-          alert("Não foi possível traçar a rota.");
+          alert("Erro ao traçar rota: " + status);
         }
       });
     });
   }
 
-  // 💾 Botão salvar carona
+  // 💾 Simular salvar carona
   const btnSave = document.getElementById("btn-save");
   if (btnSave) {
     btnSave.addEventListener("click", () => {
       const origem = originInput.value;
       const destino = destinationInput.value;
-      alert(`Carona salva!\nOrigem: ${origem}\nDestino: ${destino}`);
+      alert(`🚘 Carona salva!\nOrigem: ${origem}\nDestino: ${destino}`);
     });
   }
 
-  // 🔒 Botão logout
+  // 🔒 Logout (corrigido)
   const btnLogout = document.getElementById("btn-logout");
   if (btnLogout) {
     btnLogout.addEventListener("click", () => {
-      if (firebase && firebase.auth) {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().signOut()
           .then(() => {
+            console.log("Logout realizado.");
             window.location.href = "login.html";
           })
           .catch(error => {
+            console.error("Erro ao sair:", error);
             alert("Erro ao sair: " + error.message);
           });
       } else {
-        console.error("Firebase Auth não carregado.");
+        alert("Firebase não carregado corretamente.");
       }
     });
   }
