@@ -1,14 +1,15 @@
-<!-- app.html -->
+<!-- Nome do arquivo: app.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <title>Paistorista - Motorista</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Paistorista - Oferecer Carona</title>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
   <style>
-    #map { height: 400px; width: 100%; margin-top: 20px; }
+    #map { height: 400px; width: 100%; margin-top: 10px; }
+    .brand-logo { font-size: 1.6rem; }
   </style>
 </head>
 <body class="grey lighten-4">
@@ -16,68 +17,41 @@
     <div class="nav-wrapper container">
       <span class="brand-logo">🚗 Paistorista</span>
       <ul class="right">
-        <li><a class="btn red lighten-1" id="btn-logout"><i class="material-icons left">exit_to_app</i>Sair</a></li>
+        <li><button id="btn-logout" class="btn red lighten-1">Sair</button></li>
       </ul>
     </div>
   </nav>
 
   <main class="container">
-    <h5 class="blue-text text-darken-3">📍 Oferecer Carona</h5>
-
     <div class="row">
       <div class="input-field col s12 m6">
-        <input id="origin" type="text">
-        <label for="origin">Endereço de origem</label>
+        <input type="text" id="school" class="validate">
+        <label for="school">Nome da Escola (Destino)</label>
       </div>
       <div class="input-field col s12 m6">
-        <input id="destination" type="text">
-        <label for="destination">Escola / Destino</label>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="input-field col s6 m4">
-        <input id="school" type="text">
-        <label for="school">Nome da escola</label>
-      </div>
-      <div class="input-field col s6 m4">
-        <input id="vagas" type="number" min="1">
+        <input type="number" id="vagas" class="validate">
         <label for="vagas">Vagas disponíveis</label>
       </div>
-      <div class="input-field col s12 m4">
-        <label>Permitir encontros no caminho</label>
-        <p>
-          <label>
-            <input type="checkbox" id="encontrosPermitidos" class="filled-in" />
-            <span>Sim</span>
-          </label>
-        </p>
+    </div>
+
+    <div class="row">
+      <div class="input-field col s12">
+        <input id="origin" type="text" placeholder="Origem">
       </div>
     </div>
 
     <div class="row">
-      <button id="btn-location" class="btn teal lighten-1 col s12 m4">
-        <i class="material-icons left">my_location</i> Usar localização atual
-      </button>
-      <button id="btn-route" class="btn blue col s12 m4">
-        <i class="material-icons left">map</i> Traçar rota
-      </button>
-      <button id="btn-save" class="btn green darken-2 col s12 m4">
-        <i class="material-icons left">save</i> Salvar carona
-      </button>
+      <button id="btn-location" class="btn teal waves-effect waves-light">📍 Usar localização atual</button>
+      <button id="btn-route" class="btn blue waves-effect waves-light">🗺️ Traçar rota</button>
+      <button id="btn-save" class="btn green darken-1 waves-effect waves-light">💾 Oferecer carona</button>
     </div>
 
-    <div id="map" class="z-depth-1"></div>
+    <div id="map"></div>
   </main>
 
-  <!-- Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="main.js"></script>
-
+  <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY&libraries=places&callback=initMap" async defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap"></script>
 </body>
 </html>
