@@ -23,29 +23,44 @@ function initMap() {
 
   // 📍 Botão de localização atual
   document.getElementById("btn-location").addEventListener("click", () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const currentPos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const currentPos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
 
-          map.setCenter(currentPos);
-          new google.maps.Marker({
-            position: currentPos,
-            map: map,
-            title: "Sua localização",
-          });
+        // Centraliza o mapa e adiciona marcador
+        map.setCenter(currentPos);
+        new google.maps.Marker({
+          position: currentPos,
+          map: map,
+          title: "Sua localização"
+        });
 
-          originInput.value = `${currentPos.lat}, ${currentPos.lng}`;
-        },
-        () => alert("Erro ao obter localização.")
-      );
-    } else {
-      alert("Geolocalização não suportada.");
-    }
-  });
+        // 🧭 Geocoder reverso: coordenadas -> endereço
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: currentPos }, (results, status) => {
+          if (status === "OK") {
+            if (results[0]) {
+              document.getElementById("origin").value = results[0].formatted_address;
+            } else {
+              alert("Endereço não encontrado.");
+            }
+          } else {
+            alert("Erro ao obter endereço: " + status);
+          }
+        });
+
+      },
+      () => alert("Erro ao obter localização.")
+    );
+  } else {
+    alert("Geolocalização não suportada.");
+  }
+});
+
 
   // 🧭 Botão traçar rota
   document.getElementById("btn-route").addEventListener("click", () => {
@@ -86,3 +101,4 @@ function initMap() {
     });
   });
 }
+
