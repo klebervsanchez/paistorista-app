@@ -3,6 +3,22 @@ let directionsService;
 let directionsRenderer;
 
 function initMap() {
+  directionsService = new google.maps.DirectionsService();
+  directionsRenderer = new google.maps.DirectionsRenderer();
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: -23.5505, lng: -46.6333 }, // São Paulo
+    zoom: 12
+  });
+  directionsRenderer.setMap(map);
+
+  // 🔽 Autocomplete nos inputs
+  const originInput = document.getElementById("origin");
+  const destinationInput = document.getElementById("destination");
+
+  new google.maps.places.Autocomplete(originInput);
+  new google.maps.places.Autocomplete(destinationInput);
+}
+
   // Posição padrão caso geolocalização falhe
   const defaultPos = { lat: -23.55052, lng: -46.633308 };
 
@@ -80,3 +96,4 @@ function initMap() {
     });
   });
 }
+
