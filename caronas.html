@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Caronas Disponíveis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="grey lighten-4">
+
+  <nav class="blue darken-2">
+    <div class="nav-wrapper container">
+      <a href="#!" class="brand-logo">👨‍👩‍👧 Caronas Disponíveis</a>
+      <ul class="right">
+        <li><button id="btn-logout" class="btn red">Sair</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container section">
+    <div id="lista-caronas" class="row"></div>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return (window.location.href = "login.html");
+
+      db.collection("caronas")
+        .where("status", "==", "ativa")
+        .where("vagasDisponiveis", ">", 0)
+        .onSnapshot(snapshot => {
+          const container = document.getElementById("lista-caronas");
+          container.innerHTML = "";
+
+          if (snapshot.empty) {
+            container.innerHTML = "<p>Nenhuma carona disponível no momento.</p>";
+            return;
+          }
+
+          snapshot.forEach(doc => {
+            const carona = doc.data();
+            const docId = doc.id;
+
+            const card = document.createElement("div");
+            card.className = "col s12 m6";
+            card.innerHTML = `
+              <div class="card">
+                <div class="card-content">
+                  <span class="card-title blue-text text-darken-2">${carona.escola}</span>
+                  <p><strong>Origem:</strong> ${carona.origem}</p>
+                  <p><strong>Destino:</strong> ${carona.destino}</p>
+                  <p><strong>Vagas disponíveis:</strong> ${carona.vagasDisponiveis}</p>
+                </div>
+                <div class="card-action">
+                  <input type="text" id="ponto-${docId}" placeholder="Ponto de encontro (opcional)" class="browser-default mb-2" />
+                  <button class="btn blue" onclick="solicitarCarona('${docId}', '${user.uid}', '${user.displayName}')">
+                    Solicitar Carona
+                  </button>
+                </div>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        });
+    });
+
+    function solicitarCarona(docId, uid, nome) {
+      const ponto = document.getElementById(`ponto-${docId}`).value;
+
+      const ref = db.collection("caronas").doc(docId);
+      ref.get().then(doc => {
+        if (!doc.exists) return alert("Carona não encontrada.");
+        const data = doc.data();
+
+        // Verifica se o usuário já solicitou
+        const jaSolicitou = (data.solicitacoes || []).some(s => s.uid === uid);
+        if (jaSolicitou) return alert("Você já solicitou essa carona.");
+
+        const novaSolicitacao = {
+          uid,
+          nome,
+          pontoEncontro: ponto || null,
+          status: "pendente"
+        };
+
+        ref.update({
+          solicitacoes: firebase.firestore.FieldValue.arrayUnion(novaSolicitacao)
+        }).then(() => {
+          M.toast({ html: "Solicitação enviada com sucesso!" });
+        }).catch(err => {
+          alert("Erro ao solicitar carona: " + err.message);
+        });
+      });
+    }
+
+    document.getElementById("btn-logout").addEventListener("click", () => {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>
