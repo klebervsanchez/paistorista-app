@@ -1,94 +1,136 @@
-<!-- painel-motorista.html -->
+<!-- Nome do arquivo: painel-motorista.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Painel do Motorista</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paistorista - Painel do Motorista</title>
+
+  <!-- Materialize CSS + Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
+  <style>
+    .brand-logo { font-size: 1.5rem; }
+    .card { margin-bottom: 20px; }
+    .solicitacao { margin-left: 15px; margin-top: 10px; }
+    .status-pendente { color: orange; font-weight: bold; }
+    .status-aceita { color: green; font-weight: bold; }
+    .status-recusada { color: red; font-weight: bold; }
+  </style>
 </head>
 <body class="grey lighten-4">
 
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
-      <a href="#!" class="brand-logo">🚘 Minhas Caronas</a>
+      <a class="brand-logo"><i class="material-icons left">dashboard</i> Painel do Motorista</a>
       <ul class="right">
-        <li><a href="app.html" class="btn orange">Voltar</a></li>
-        <li><button id="btn-logout" class="btn red">Sair</button></li>
+        <li><button id="btn-logout" class="btn red lighten-1">Sair</button></li>
       </ul>
     </div>
   </nav>
 
-  <main class="container">
-    <h5 class="blue-text text-darken-2">Caronas Ativas</h5>
-    <ul id="active-rides" class="collection z-depth-1"></ul>
-
-    <h5 class="blue-text text-darken-2">Histórico de Caronas</h5>
-    <ul id="ride-history" class="collection z-depth-1"></ul>
+  <main class="container section">
+    <h5 class="blue-text text-darken-2">Minhas Caronas Cadastradas</h5>
+    <div id="caronas-container">
+      <!-- Caronas serão listadas aqui via JS -->
+    </div>
   </main>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
+
   <script>
+    const db = firebase.firestore();
+    let currentUser = null;
+
     firebase.auth().onAuthStateChanged(user => {
-      if (!user) return (window.location.href = "login.html");
-
-      const db = firebase.firestore();
-
-      // 🔵 Caronas ativas
-      db.collection("caronas")
-        .where("uid", "==", user.uid)
-        .where("status", "==", "ativa")
-        .onSnapshot(snapshot => {
-          const list = document.getElementById("active-rides");
-          list.innerHTML = "";
-          snapshot.forEach(doc => {
-            const c = doc.data();
-            const li = document.createElement("li");
-            li.className = "collection-item";
-            li.innerHTML = `
-              <strong>${c.escola}</strong> (${c.vagasDisponiveis}/${c.vagas} vagas)<br>
-              Origem: ${c.origem}<br>
-              Destino: ${c.destino}<br>
-              <small>${c.solicitacoes?.length || 0} solicitação(ões)</small>
-              <br>
-              <button class="btn-small blue" onclick="verSolicitacoes('${doc.id}')">Ver solicitações</button>
-            `;
-            list.appendChild(li);
-          });
-        });
-
-      // 🟡 Histórico
-      db.collection("caronas")
-        .where("uid", "==", user.uid)
-        .where("status", "==", "encerrada")
-        .onSnapshot(snapshot => {
-          const list = document.getElementById("ride-history");
-          list.innerHTML = "";
-          snapshot.forEach(doc => {
-            const c = doc.data();
-            const li = document.createElement("li");
-            li.className = "collection-item grey lighten-3";
-            li.innerHTML = `
-              <strong>${c.escola}</strong> (Encerrada)<br>
-              Origem: ${c.origem}<br>
-              Destino: ${c.destino}<br>
-              <small>${c.solicitacoes?.length || 0} passageiros</small>
-            `;
-            list.appendChild(li);
-          });
-        });
+      if (user) {
+        currentUser = user;
+        loadDriverRides();
+      } else {
+        window.location.href = "login.html";
+      }
     });
-
-    function verSolicitacoes(caronaId) {
-      window.location.href = `solicitacoes.html?carona=${caronaId}`;
-    }
 
     document.getElementById("btn-logout").addEventListener("click", () => {
-      firebase.auth().signOut().then(() => (window.location.href = "login.html"));
+      firebase.auth().signOut().then(() => window.location.href = "login.html");
     });
+
+    function loadDriverRides() {
+      const container = document.getElementById("caronas-container");
+      db.collection("caronas").where("uid", "==", firebase.auth().currentUser.uid)
+        .onSnapshot(snapshot => {
+          container.innerHTML = "";
+          snapshot.forEach(doc => {
+            const carona = doc.data();
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+              <div class="card-content">
+                <span class="card-title"><strong>${carona.escola}</strong></span>
+                Origem: ${carona.origem}<br>
+                Destino: ${carona.destino}<br>
+                Vagas disponíveis: ${carona.vagasDisponiveis}/${carona.vagas}<br>
+                Status: <strong>${carona.status}</strong>
+              </div>
+              <div class="card-action">
+                <span><strong>Solicitações:</strong></span>
+                <div>
+                  ${(carona.solicitacoes || []).map((s, i) => `
+                    <div class="solicitacao">
+                      <span>👤 ${s.uid}</span><br>
+                      <span>Status: <span class="status-${s.status}">${s.status}</span></span><br>
+                      ${s.status === "pendente" ? `
+                        <button class="btn green btn-small" onclick="responder('${doc.id}', ${i}, 'aceita')">Aceitar</button>
+                        <button class="btn red btn-small" onclick="responder('${doc.id}', ${i}, 'recusada')">Recusar</button>
+                      ` : ''}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+            `;
+            container.appendChild(div);
+          });
+        });
+    }
+
+    function responder(caronaId, index, status) {
+      const ref = db.collection("caronas").doc(caronaId);
+      ref.get().then(doc => {
+        const carona = doc.data();
+        const solicitacoes = [...(carona.solicitacoes || [])];
+        if (solicitacoes[index]) {
+          solicitacoes[index].status = status;
+
+          let novasVagas = carona.vagasDisponiveis;
+          if (status === "aceita") {
+            novasVagas--;
+            if (novasVagas <= 0) {
+              ref.update({
+                solicitacoes,
+                vagasDisponiveis: 0,
+                status: "inativa"
+              });
+              return;
+            }
+          }
+
+          ref.update({
+            solicitacoes,
+            vagasDisponiveis: novasVagas
+          });
+        }
+      });
+    }
   </script>
 
+  <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
