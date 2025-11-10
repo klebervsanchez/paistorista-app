@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minhas Solicitações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+</head>
+<body class="grey lighten-4">
+
+  <nav class="blue darken-2">
+    <div class="nav-wrapper container">
+      <a href="#!" class="brand-logo">📄 Minhas Solicitações</a>
+      <ul class="right">
+        <li><button id="btn-logout" class="btn red">Sair</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container section">
+    <ul class="collection with-header" id="lista-solicitacoes">
+      <li class="collection-header"><h5>Suas caronas solicitadas</h5></li>
+    </ul>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return (window.location.href = "login.html");
+
+      // 🔍 Busca todas as caronas que possuem o usuário nas solicitações
+      db.collection("caronas").onSnapshot(snapshot => {
+        const lista = document.getElementById("lista-solicitacoes");
+        lista.innerHTML = '<li class="collection-header"><h5>Suas caronas solicitadas</h5></li>';
+        
+        snapshot.forEach(doc => {
+          const carona = doc.data();
+          const idCarona = doc.id;
+          const solicitacoes = carona.solicitacoes || [];
+
+          solicitacoes.forEach(sol => {
+            if (sol.uid === user.uid) {
+              const statusColor = sol.status === "aceita" ? "green-text" :
+                                  sol.status === "recusada" ? "red-text" : "orange-text";
+
+              const item = document.createElement("li");
+              item.className = "collection-item";
+              item.innerHTML = `
+                <span class="title"><strong>Destino:</strong> ${carona.destino} (${carona.escola})</span><br>
+                <span><strong>Origem:</strong> ${carona.origem}</span><br>
+                <span><strong>Status:</strong> <span class="${statusColor}">${sol.status}</span></span><br>
+                ${sol.pontoEncontro ? `<span><strong>Ponto de encontro:</strong> ${sol.pontoEncontro}</span>` : ''}
+              `;
+              lista.appendChild(item);
+            }
+          });
+        });
+      });
+    });
+
+    document.getElementById("btn-logout").addEventListener("click", () => {
+      firebase.auth().signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    });
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>
