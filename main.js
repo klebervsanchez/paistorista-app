@@ -1,8 +1,10 @@
 let map, directionsService, directionsRenderer;
-const user = firebase.auth().currentUser;
+let currentUser = null;
 
+// 🔁 Inicializar mapa
 function initMap() {
   const defaultPos = { lat: -23.55052, lng: -46.633308 };
+
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 13,
     center: defaultPos,
@@ -11,19 +13,34 @@ function initMap() {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
+  // 🧭 Autocomplete Google Places
   new google.maps.places.Autocomplete(document.getElementById("origin"));
   new google.maps.places.Autocomplete(document.getElementById("destination"));
 
-  document.getElementById("btn-location").addEventListener("click", getCurrentLocation);
-  document.getElementById("btn-route").addEventListener("click", drawRoute);
-  document.getElementById("btn-save").addEventListener("click", saveRide);
+  // 🔐 Observar autenticação
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+
+  // 📍 Eventos de botões
+  document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
+  document.getElementById("btn-route")?.addEventListener("click", drawRoute);
+  document.getElementById("btn-save")?.addEventListener("click", saveRide);
   document.getElementById("btn-logout")?.addEventListener("click", () => {
     firebase.auth().signOut().then(() => window.location.href = "login.html");
   });
 
-  if (document.getElementById("rides-list")) loadAvailableRides();
+  // 👁️ Se estiver no painel do passageiro
+  if (document.getElementById("rides-list")) {
+    loadAvailableRides();
+  }
 }
 
+// 📍 Usar localização atual
 function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition(position => {
     const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
@@ -36,12 +53,17 @@ function getCurrentLocation() {
         document.getElementById("origin").value = results[0].formatted_address;
       }
     });
+  }, () => {
+    alert("Não foi possível obter a localização.");
   });
 }
 
+// 🗺️ Traçar rota
 function drawRoute() {
   const origin = document.getElementById("origin").value;
   const destination = document.getElementById("destination").value;
+
+  if (!origin || !destination) return alert("Preencha origem e destino.");
 
   directionsService.route({
     origin,
@@ -56,32 +78,40 @@ function drawRoute() {
   });
 }
 
+// 💾 Salvar carona no Firestore
 function saveRide() {
-  const origin = document.getElementById("origin").value;
-  const destination = document.getElementById("destination").value;
-  const schoolName = document.getElementById("school").value;
-  const seats = parseInt(document.getElementById("seats").value);
+  const origin = document.getElementById("origin").value.trim();
+  const destination = document.getElementById("destination").value.trim();
+  const schoolName = document.getElementById("school")?.value.trim();
+  const vagas = parseInt(document.getElementById("vagas")?.value);
 
-  if (!origin || !destination || !schoolName || isNaN(seats)) {
-    return alert("Preencha todos os campos.");
+  if (!origin || !destination || !schoolName || isNaN(vagas) || vagas <= 0) {
+    return alert("Preencha todos os campos corretamente.");
+  }
+
+  if (!currentUser) {
+    return alert("Usuário não autenticado.");
   }
 
   db.collection("caronas").add({
-    uid: user?.uid,
-    motorista: user?.displayName || "Motorista",
+    uid: currentUser.uid,
+    motorista: currentUser.displayName || "Motorista",
     origem: origin,
     destino: destination,
     escola: schoolName,
-    vagas: seats,
-    vagasDisponiveis: seats,
+    vagas: vagas,
+    vagasDisponiveis: vagas,
     status: "ativa",
     solicitacoes: [],
     dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
-    alert("Carona cadastrada!");
+    alert("✅ Carona cadastrada com sucesso!");
+  }).catch(err => {
+    alert("Erro ao salvar carona: " + err.message);
   });
 }
 
+// 🧾 Listar caronas disponíveis para passageiro
 function loadAvailableRides() {
   const list = document.getElementById("rides-list");
   db.collection("caronas").where("status", "==", "ativa")
@@ -95,8 +125,7 @@ function loadAvailableRides() {
           <strong>${carona.escola}</strong><br>
           Origem: ${carona.origem}<br>
           Destino: ${carona.destino}<br>
-          Vagas: ${carona.vagasDisponiveis}/${carona.vagas}
-          <br>
+          Vagas: ${carona.vagasDisponiveis}/${carona.vagas}<br>
           <button class="btn-small blue" onclick="solicitarCarona('${doc.id}')">Solicitar</button>
         `;
         list.appendChild(li);
@@ -104,14 +133,18 @@ function loadAvailableRides() {
     });
 }
 
+// 🙋 Solicitar carona
 function solicitarCarona(caronaId) {
   const uid = firebase.auth().currentUser?.uid;
+  if (!uid) return alert("Usuário não autenticado.");
+
+  const solicitacao = { uid, status: "pendente" };
+
   db.collection("caronas").doc(caronaId).update({
-    solicitacoes: firebase.firestore.FieldValue.arrayUnion({
-      uid,
-      status: "pendente",
-    })
+    solicitacoes: firebase.firestore.FieldValue.arrayUnion(solicitacao)
   }).then(() => {
-    alert("Solicitação enviada!");
+    alert("🚗 Solicitação enviada com sucesso!");
+  }).catch(err => {
+    alert("Erro ao solicitar carona: " + err.message);
   });
 }

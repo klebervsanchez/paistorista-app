@@ -50,7 +50,20 @@
   </nav>
 
   <main class="container section">
-    <!-- ✅ Inputs -->
+    
+    <!-- ✅ Campos adicionais: Escola e Vagas -->
+    <div class="row">
+      <div class="input-field col s12 m6">
+        <input id="school" type="text" class="validate">
+        <label for="school">Nome da Escola (Destino)</label>
+      </div>
+      <div class="input-field col s12 m6">
+        <input id="vagas" type="number" class="validate">
+        <label for="vagas">Vagas disponíveis</label>
+      </div>
+    </div>
+
+    <!-- ✅ Inputs de origem e destino -->
     <div class="row">
       <div class="input-field col s12 m6">
         <input id="origin" type="text" class="validate">
@@ -85,9 +98,10 @@
     </div>
   </main>
 
-  <!-- ✅ Firebase SDKs obrigatórios -->
+  <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
 
   <!-- ✅ Configuração Firebase -->
   <script src="firebase-config.js"></script>
