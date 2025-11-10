@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico de Caronas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+</head>
+<body class="grey lighten-4">
+  <nav class="blue darken-2">
+    <div class="nav-wrapper container">
+      <a href="#!" class="brand-logo">📖 Histórico de Caronas</a>
+      <ul class="right">
+        <li><button id="btn-logout" class="btn red">Sair</button></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container section">
+    <h5>Caronas que Ofereci</h5>
+    <ul id="lista-motorista" class="collection"></ul>
+
+    <h5>Caronas que Solicitei</h5>
+    <ul id="lista-passageiro" class="collection"></ul>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return window.location.href = "login.html";
+
+      const uid = user.uid;
+
+      // 🔹 Caronas como motorista
+      db.collection("caronas").where("uid", "==", uid).get().then(snapshot => {
+        const lista = document.getElementById("lista-motorista");
+        if (snapshot.empty) {
+          lista.innerHTML = "<li class='collection-item'>Nenhuma carona oferecida.</li>";
+          return;
+        }
+
+        snapshot.forEach(doc => {
+          const c = doc.data();
+          const item = `
+            <li class="collection-item">
+              <span><strong>Escola:</strong> ${c.escola}</span><br>
+              <span><strong>Origem:</strong> ${c.origem}</span><br>
+              <span><strong>Vagas:</strong> ${c.vagas}</span><br>
+              <span><strong>Status:</strong> ${c.ativa ? "Ativa" : "Encerrada"}</span>
+            </li>
+          `;
+          lista.innerHTML += item;
+        });
+      });
+
+      // 🔹 Caronas como passageiro (procurar solicitações onde uid aparece)
+      db.collection("caronas").get().then(snapshot => {
+        const lista = document.getElementById("lista-passageiro");
+        let encontrado = false;
+
+        snapshot.forEach(doc => {
+          const c = doc.data();
+          const solicitacoes = c.solicitacoes || [];
+
+          solicitacoes.forEach(s => {
+            if (s.uid === uid) {
+              encontrado = true;
+              const item = `
+                <li class="collection-item">
+                  <span><strong>Escola:</strong> ${c.escola}</span><br>
+                  <span><strong>Motorista:</strong> ${c.nomeMotorista || "Motorista"}</span><br>
+                  <span><strong>Ponto de Encontro:</strong> ${s.pontoEncontro}</span><br>
+                  <span><strong>Status:</strong> ${s.status}</span>
+                </li>
+              `;
+              lista.innerHTML += item;
+            }
+          });
+        });
+
+        if (!encontrado) {
+          lista.innerHTML = "<li class='collection-item'>Nenhuma carona solicitada.</li>";
+        }
+      });
+
+      // Logout
+      document.getElementById("btn-logout").addEventListener("click", () => {
+        firebase.auth().signOut().then(() => {
+          window.location.href = "login.html";
+        });
+      });
+    });
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>
