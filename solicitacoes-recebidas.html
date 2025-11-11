@@ -1,131 +1,132 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Solicitações Recebidas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body class="grey lighten-4">
 
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
-      <a href="#!" class="brand-logo">📬 Solicitações Recebidas</a>
+      <a class="brand-logo"><i class="material-icons left">people</i> Solicitações Recebidas</a>
       <ul class="right">
-        <li><button id="btn-logout" class="btn red">Sair</button></li>
+        <li><button id="btn-logout" class="btn red lighten-1"><i class="material-icons left">exit_to_app</i> Sair</button></li>
       </ul>
     </div>
   </nav>
 
   <main class="container section">
-    <ul class="collection with-header" id="lista-recebidas">
-      <li class="collection-header"><h5>Minhas caronas e solicitações</h5></li>
-    </ul>
+    <h5 class="blue-text text-darken-2">📥 Minhas Caronas e Solicitações</h5>
+    <div id="solicitacoes-container" class="section">
+      <!-- Preenchido via JavaScript -->
+    </div>
   </main>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+
+  <!-- Script -->
   <script>
     const db = firebase.firestore();
-    const auth = firebase.auth();
+    let currentUser = null;
 
     firebase.auth().onAuthStateChanged(user => {
-      if (!user) return (window.location.href = "login.html");
-
-      db.collection("caronas").onSnapshot(snapshot => {
-        const lista = document.getElementById("lista-recebidas");
-        lista.innerHTML = '<li class="collection-header"><h5>Minhas caronas e solicitações</h5></li>';
-
-        snapshot.forEach(doc => {
-          const carona = doc.data();
-          const idCarona = doc.id;
-
-          // Só caronas do usuário logado (motorista)
-          if (carona.uid === user.uid && carona.solicitacoes?.length > 0) {
-            const item = document.createElement("li");
-            item.className = "collection-item";
-
-            let inner = `
-              <strong>Destino:</strong> ${carona.destino} (${carona.escola})<br>
-              <strong>Origem:</strong> ${carona.origem}<br>
-              <strong>Vagas disponíveis:</strong> ${carona.vagas || 0}<br>
-              <hr>
-              <strong>Solicitações:</strong>
-              <ul class="browser-default">
-            `;
-
-            carona.solicitacoes.forEach((sol, index) => {
-              const statusColor = sol.status === "aceita" ? "green-text" :
-                                  sol.status === "recusada" ? "red-text" : "orange-text";
-
-              inner += `
-                <li>
-                  👤 <strong>${sol.nome || 'Usuário'}</strong> - 
-                  <span class="${statusColor}">${sol.status}</span><br>
-                  📍 Ponto de encontro: ${sol.pontoEncontro || 'Não informado'}
-                  ${sol.status === 'pendente' ? `
-                    <br>
-                    <button class="btn-small green accept-btn" data-carona="${idCarona}" data-index="${index}">Aceitar</button>
-                    <button class="btn-small red reject-btn" data-carona="${idCarona}" data-index="${index}">Recusar</button>
-                  ` : ''}
-                  <hr>
-                </li>
-              `;
-            });
-
-            inner += '</ul>';
-            item.innerHTML = inner;
-            lista.appendChild(item);
-          }
-        });
-
-        // Botões: aceitar ou recusar
-        setTimeout(() => {
-          document.querySelectorAll('.accept-btn').forEach(btn => {
-            btn.addEventListener('click', () => atualizarStatus(btn, 'aceita'));
-          });
-          document.querySelectorAll('.reject-btn').forEach(btn => {
-            btn.addEventListener('click', () => atualizarStatus(btn, 'recusada'));
-          });
-        }, 500);
-      });
-
-      function atualizarStatus(btn, novoStatus) {
-        const caronaId = btn.getAttribute("data-carona");
-        const index = parseInt(btn.getAttribute("data-index"));
-
-        const ref = db.collection("caronas").doc(caronaId);
-
-        ref.get().then(doc => {
-          if (doc.exists) {
-            const dados = doc.data();
-            if (dados.solicitacoes && dados.solicitacoes[index]) {
-              dados.solicitacoes[index].status = novoStatus;
-
-              // Atualiza carona no Firestore
-              ref.update({ solicitacoes: dados.solicitacoes }).then(() => {
-                if (novoStatus === "aceita") {
-                  // Reduzir 1 vaga
-                  const novasVagas = Math.max(0, (dados.vagas || 1) - 1);
-                  ref.update({ vagas: novasVagas });
-
-                  // Se acabou as vagas, desativar carona
-                  if (novasVagas === 0) {
-                    ref.update({ ativa: false });
-                  }
-                }
-              });
-            }
-          }
-        });
+      if (user) {
+        currentUser = user;
+        carregarSolicitacoes();
+      } else {
+        window.location.href = "login.html";
       }
     });
 
     document.getElementById("btn-logout").addEventListener("click", () => {
-      firebase.auth().signOut().then(() => {
-        window.location.href = "login.html";
-      });
+      firebase.auth().signOut().then(() => window.location.href = "login.html");
     });
+
+    function carregarSolicitacoes() {
+      const container = document.getElementById("solicitacoes-container");
+      container.innerHTML = "";
+
+      db.collection("caronas").where("uid", "==", currentUser.uid)
+        .onSnapshot(snapshot => {
+          snapshot.forEach(doc => {
+            const carona = doc.data();
+            const solicitacoes = carona.solicitacoes || [];
+
+            if (solicitacoes.length === 0) return;
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <div class="card-content">
+                <span class="card-title"><strong>${carona.escola}</strong></span>
+                <p><strong>Origem:</strong> ${carona.origem}</p>
+                <p><strong>Destino:</strong> ${carona.destino}</p>
+                <p><strong>Vagas disponíveis:</strong> ${carona.vagasDisponiveis}</p>
+                <ul class="collection">
+                  ${solicitacoes.map((s, index) => `
+                    <li class="collection-item">
+                      Passageiro UID: ${s.uid} - <strong>Status:</strong> ${s.status}
+                      ${s.status === "pendente" ? `
+                        <div class="right">
+                          <button class="btn-small green" onclick="aprovarSolicitacao('${doc.id}', '${s.uid}')">Aprovar</button>
+                          <button class="btn-small red" onclick="rejeitarSolicitacao('${doc.id}', '${s.uid}')">Rejeitar</button>
+                        </div>
+                      ` : ''}
+                    </li>
+                  `).join("")}
+                </ul>
+              </div>
+            `;
+            container.appendChild(card);
+          });
+        });
+    }
+
+    function aprovarSolicitacao(caronaId, passageiroUid) {
+      const ref = db.collection("caronas").doc(caronaId);
+      ref.get().then(doc => {
+        const data = doc.data();
+        const solicitacoes = data.solicitacoes || [];
+        const index = solicitacoes.findIndex(s => s.uid === passageiroUid);
+        if (index === -1) return;
+
+        // Atualiza o status
+        solicitacoes[index].status = "aprovada";
+
+        // Atualiza vagas disponíveis
+        const novasVagas = data.vagasDisponiveis > 0 ? data.vagasDisponiveis - 1 : 0;
+
+        ref.update({
+          solicitacoes,
+          vagasDisponiveis: novasVagas
+        }).then(() => {
+          alert("Solicitação aprovada!");
+        });
+      });
+    }
+
+    function rejeitarSolicitacao(caronaId, passageiroUid) {
+      const ref = db.collection("caronas").doc(caronaId);
+      ref.get().then(doc => {
+        const data = doc.data();
+        const solicitacoes = data.solicitacoes || [];
+        const index = solicitacoes.findIndex(s => s.uid === passageiroUid);
+        if (index === -1) return;
+
+        // Atualiza o status
+        solicitacoes[index].status = "rejeitada";
+
+        ref.update({ solicitacoes }).then(() => {
+          alert("Solicitação rejeitada.");
+        });
+      });
+    }
   </script>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
