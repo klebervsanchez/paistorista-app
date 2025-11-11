@@ -126,6 +126,10 @@ function loadAvailableRides() {
       list.innerHTML = "";
       snapshot.forEach(doc => {
         const carona = doc.data();
+
+        // Evita exibir caronas do próprio usuário
+        if (carona.uid === currentUser?.uid) return;
+
         const li = document.createElement("li");
         li.className = "collection-item";
         li.innerHTML = `
@@ -147,14 +151,27 @@ function solicitarCarona(caronaId) {
 
   const solicitacao = { uid, status: "pendente" };
 
-  db.collection("caronas").doc(caronaId).update({
-    solicitacoes: firebase.firestore.FieldValue.arrayUnion(solicitacao)
-  }).then(() => {
-    alert("🚗 Solicitação enviada com sucesso!");
-  }).catch(err => {
-    alert("❌ Erro ao solicitar carona: " + err.message);
+  const ref = db.collection("caronas").doc(caronaId);
+
+  ref.get().then(doc => {
+    const data = doc.data();
+    const jaSolicitou = (data.solicitacoes || []).some(s => s.uid === uid);
+
+    if (jaSolicitou) {
+      alert("⚠️ Você já solicitou esta carona.");
+      return;
+    }
+
+    ref.update({
+      solicitacoes: firebase.firestore.FieldValue.arrayUnion(solicitacao)
+    }).then(() => {
+      alert("🚗 Solicitação enviada com sucesso!");
+    }).catch(err => {
+      alert("❌ Erro ao solicitar carona: " + err.message);
+    });
   });
 }
 
-// ✅ Torna initMap global para o Google Maps
+// ✅ Torna funções globais para o HTML acessar
 window.initMap = initMap;
+window.solicitarCarona = solicitarCarona;
