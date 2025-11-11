@@ -1,6 +1,5 @@
 let map, directionsService, directionsRenderer;
 let currentUser = null;
-let db = null;
 
 // 🔁 Inicializar mapa
 function initMap() {
@@ -27,7 +26,6 @@ function initMap() {
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
-      db = firebase.firestore();
     } else {
       window.location.href = "login.html";
     }
@@ -96,7 +94,7 @@ function saveRide() {
     return alert("⚠️ Preencha todos os campos corretamente.");
   }
 
-  if (!currentUser || !db) {
+  if (!currentUser) {
     return alert("⚠️ Usuário não autenticado.");
   }
 
@@ -121,7 +119,7 @@ function saveRide() {
 // 🧾 Listar caronas disponíveis para passageiro
 function loadAvailableRides() {
   const list = document.getElementById("rides-list");
-  if (!db || !list) return;
+  if (!list) return;
 
   db.collection("caronas").where("status", "==", "ativa")
     .onSnapshot(snapshot => {
@@ -157,3 +155,6 @@ function solicitarCarona(caronaId) {
     alert("❌ Erro ao solicitar carona: " + err.message);
   });
 }
+
+// ✅ Torna initMap global para o Google Maps
+window.initMap = initMap;
