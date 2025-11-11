@@ -1,5 +1,6 @@
 let map, directionsService, directionsRenderer;
 let currentUser = null;
+let db = null;
 
 // 🔁 Inicializar mapa
 function initMap() {
@@ -13,7 +14,7 @@ function initMap() {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  // 🧭 Autocomplete Google Places
+  // 🧭 Autocomplete
   const originInput = document.getElementById("origin");
   const destinationInput = document.getElementById("destination");
 
@@ -22,30 +23,34 @@ function initMap() {
     new google.maps.places.Autocomplete(destinationInput);
   }
 
-  // 🔐 Observar autenticação
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
+      db = firebase.firestore();
+
+      if (document.getElementById("rides-list")) {
+        loadAvailableRides();
+      }
+
+      if (document.getElementById("my-requests")) {
+        loadMyRequests();
+      }
+
     } else {
       window.location.href = "login.html";
     }
   });
 
-  // 📍 Eventos de botões
+  // 📍 Eventos
   document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
   document.getElementById("btn-route")?.addEventListener("click", drawRoute);
   document.getElementById("btn-save")?.addEventListener("click", saveRide);
   document.getElementById("btn-logout")?.addEventListener("click", () => {
     firebase.auth().signOut().then(() => window.location.href = "login.html");
   });
-
-  // 👁️ Se estiver no painel do passageiro
-  if (document.getElementById("rides-list")) {
-    loadAvailableRides();
-  }
 }
 
-// 📍 Usar localização atual
+// 📍 Localização
 function getCurrentLocation() {
   navigator.geolocation.getCurrentPosition(position => {
     const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
@@ -63,7 +68,7 @@ function getCurrentLocation() {
   });
 }
 
-// 🗺️ Traçar rota
+// 🗺️ Rota
 function drawRoute() {
   const origin = document.getElementById("origin")?.value;
   const destination = document.getElementById("destination")?.value;
@@ -83,7 +88,7 @@ function drawRoute() {
   });
 }
 
-// 💾 Salvar carona no Firestore
+// 💾 Salvar carona
 function saveRide() {
   const origin = document.getElementById("origin")?.value.trim();
   const destination = document.getElementById("destination")?.value.trim();
@@ -94,7 +99,7 @@ function saveRide() {
     return alert("⚠️ Preencha todos os campos corretamente.");
   }
 
-  if (!currentUser) {
+  if (!currentUser || !db) {
     return alert("⚠️ Usuário não autenticado.");
   }
 
@@ -116,18 +121,17 @@ function saveRide() {
   });
 }
 
-// 🧾 Listar caronas disponíveis para passageiro
+// 🧾 Listar caronas
 function loadAvailableRides() {
   const list = document.getElementById("rides-list");
-  if (!list) return;
+  if (!list || !db) return;
 
   db.collection("caronas").where("status", "==", "ativa")
     .onSnapshot(snapshot => {
-      list.innerHTML = "";
+      list.innerHTML = '<li class="collection-header"><h6>Caronas Ativas</h6></li>';
       snapshot.forEach(doc => {
         const carona = doc.data();
 
-        // Evita exibir caronas do próprio usuário
         if (carona.uid === currentUser?.uid) return;
 
         const li = document.createElement("li");
@@ -147,20 +151,24 @@ function loadAvailableRides() {
 // 🙋 Solicitar carona
 function solicitarCarona(caronaId) {
   const uid = currentUser?.uid;
-  if (!uid) return alert("⚠️ Usuário não autenticado.");
-
-  const solicitacao = { uid, status: "pendente" };
+  if (!uid || !db) return alert("⚠️ Usuário não autenticado.");
 
   const ref = db.collection("caronas").doc(caronaId);
 
   ref.get().then(doc => {
     const data = doc.data();
-    const jaSolicitou = (data.solicitacoes || []).some(s => s.uid === uid);
+    const jaSolicitado = (data.solicitacoes || []).some(s => s.uid === uid);
 
-    if (jaSolicitou) {
+    if (jaSolicitado) {
       alert("⚠️ Você já solicitou esta carona.");
       return;
     }
+
+    const solicitacao = {
+      uid,
+      status: "pendente",
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
     ref.update({
       solicitacoes: firebase.firestore.FieldValue.arrayUnion(solicitacao)
@@ -172,6 +180,31 @@ function solicitarCarona(caronaId) {
   });
 }
 
-// ✅ Torna funções globais para o HTML acessar
+// 📋 Minhas solicitações
+function loadMyRequests() {
+  const list = document.getElementById("my-requests");
+  if (!list || !db) return;
+
+  db.collection("caronas").where("status", "==", "ativa").onSnapshot(snapshot => {
+    list.innerHTML = '<li class="collection-header"><h6>Solicitações realizadas</h6></li>';
+    snapshot.forEach(doc => {
+      const carona = doc.data();
+      const solicitacao = (carona.solicitacoes || []).find(s => s.uid === currentUser.uid);
+      if (solicitacao) {
+        const li = document.createElement("li");
+        li.className = "collection-item";
+        li.innerHTML = `
+          <strong>🏫 ${carona.escola}</strong><br>
+          Origem: ${carona.origem}<br>
+          Destino: ${carona.destino}<br>
+          Status: <span class="status-label">${solicitacao.status}</span>
+        `;
+        list.appendChild(li);
+      }
+    });
+  });
+}
+
+// ✅ Exportar
 window.initMap = initMap;
 window.solicitarCarona = solicitarCarona;
