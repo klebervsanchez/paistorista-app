@@ -1,5 +1,6 @@
 let map, directionsService, directionsRenderer;
 let currentUser = null;
+let db = null;
 
 // 🔁 Inicializar mapa
 function initMap() {
@@ -14,13 +15,19 @@ function initMap() {
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
   // 🧭 Autocomplete Google Places
-  new google.maps.places.Autocomplete(document.getElementById("origin"));
-  new google.maps.places.Autocomplete(document.getElementById("destination"));
+  const originInput = document.getElementById("origin");
+  const destinationInput = document.getElementById("destination");
+
+  if (originInput && destinationInput) {
+    new google.maps.places.Autocomplete(originInput);
+    new google.maps.places.Autocomplete(destinationInput);
+  }
 
   // 🔐 Observar autenticação
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
+      db = firebase.firestore();
     } else {
       window.location.href = "login.html";
     }
@@ -54,16 +61,16 @@ function getCurrentLocation() {
       }
     });
   }, () => {
-    alert("Não foi possível obter a localização.");
+    alert("⚠️ Não foi possível obter a localização.");
   });
 }
 
 // 🗺️ Traçar rota
 function drawRoute() {
-  const origin = document.getElementById("origin").value;
-  const destination = document.getElementById("destination").value;
+  const origin = document.getElementById("origin")?.value;
+  const destination = document.getElementById("destination")?.value;
 
-  if (!origin || !destination) return alert("Preencha origem e destino.");
+  if (!origin || !destination) return alert("⚠️ Preencha origem e destino.");
 
   directionsService.route({
     origin,
@@ -73,24 +80,24 @@ function drawRoute() {
     if (status === 'OK') {
       directionsRenderer.setDirections(result);
     } else {
-      alert("Erro ao traçar rota");
+      alert("❌ Erro ao traçar rota.");
     }
   });
 }
 
 // 💾 Salvar carona no Firestore
 function saveRide() {
-  const origin = document.getElementById("origin").value.trim();
-  const destination = document.getElementById("destination").value.trim();
+  const origin = document.getElementById("origin")?.value.trim();
+  const destination = document.getElementById("destination")?.value.trim();
   const schoolName = document.getElementById("school")?.value.trim();
-  const vagas = parseInt(document.getElementById("vagas")?.value);
+  const seats = parseInt(document.getElementById("seats")?.value);
 
-  if (!origin || !destination || !schoolName || isNaN(vagas) || vagas <= 0) {
-    return alert("Preencha todos os campos corretamente.");
+  if (!origin || !destination || !schoolName || isNaN(seats) || seats <= 0) {
+    return alert("⚠️ Preencha todos os campos corretamente.");
   }
 
-  if (!currentUser) {
-    return alert("Usuário não autenticado.");
+  if (!currentUser || !db) {
+    return alert("⚠️ Usuário não autenticado.");
   }
 
   db.collection("caronas").add({
@@ -99,21 +106,23 @@ function saveRide() {
     origem: origin,
     destino: destination,
     escola: schoolName,
-    vagas: vagas,
-    vagasDisponiveis: vagas,
+    vagas: seats,
+    vagasDisponiveis: seats,
     status: "ativa",
     solicitacoes: [],
     dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
   }).then(() => {
     alert("✅ Carona cadastrada com sucesso!");
   }).catch(err => {
-    alert("Erro ao salvar carona: " + err.message);
+    alert("❌ Erro ao salvar carona: " + err.message);
   });
 }
 
 // 🧾 Listar caronas disponíveis para passageiro
 function loadAvailableRides() {
   const list = document.getElementById("rides-list");
+  if (!db || !list) return;
+
   db.collection("caronas").where("status", "==", "ativa")
     .onSnapshot(snapshot => {
       list.innerHTML = "";
@@ -122,7 +131,7 @@ function loadAvailableRides() {
         const li = document.createElement("li");
         li.className = "collection-item";
         li.innerHTML = `
-          <strong>${carona.escola}</strong><br>
+          <strong>🏫 ${carona.escola}</strong><br>
           Origem: ${carona.origem}<br>
           Destino: ${carona.destino}<br>
           Vagas: ${carona.vagasDisponiveis}/${carona.vagas}<br>
@@ -135,8 +144,8 @@ function loadAvailableRides() {
 
 // 🙋 Solicitar carona
 function solicitarCarona(caronaId) {
-  const uid = firebase.auth().currentUser?.uid;
-  if (!uid) return alert("Usuário não autenticado.");
+  const uid = currentUser?.uid;
+  if (!uid) return alert("⚠️ Usuário não autenticado.");
 
   const solicitacao = { uid, status: "pendente" };
 
@@ -145,6 +154,6 @@ function solicitarCarona(caronaId) {
   }).then(() => {
     alert("🚗 Solicitação enviada com sucesso!");
   }).catch(err => {
-    alert("Erro ao solicitar carona: " + err.message);
+    alert("❌ Erro ao solicitar carona: " + err.message);
   });
 }
