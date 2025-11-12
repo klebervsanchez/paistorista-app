@@ -23,17 +23,18 @@ function initMap() {
     new google.maps.places.Autocomplete(destinationInput);
   }
 
-  // 🔐 Autenticação
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
       db = firebase.firestore();
 
-      if (document.getElementById("rides-list")) loadAvailableRides();
-      if (document.getElementById("my-requests")) loadMyRequests();
+      if (document.getElementById("rides-list")) {
+        loadAvailableRides();
+      }
 
-      // Iniciar o temporizador de inatividade após login
-      startInactivityTimer();
+      if (document.getElementById("my-requests")) {
+        loadMyRequests();
+      }
 
     } else {
       window.location.href = "login.html";
@@ -49,9 +50,11 @@ function initMap() {
 
 // 🚪 Função de logout
 function logoutUser() {
+  console.log("Tentando deslogar...");
+
   firebase.auth().signOut()
     .then(() => {
-      alert("Logout realizado com sucesso.");
+      console.log("Usuário deslogado");
       window.location.href = "login.html";
     })
     .catch(err => {
@@ -215,25 +218,6 @@ function loadMyRequests() {
   });
 }
 
-// ✅ AUTO LOGOUT POR INATIVIDADE
-let inactivityTimeout;
-
-function startInactivityTimer() {
-  resetInactivityTimer();
-
-  ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-    window.addEventListener(event, resetInactivityTimer);
-  });
-}
-
-function resetInactivityTimer() {
-  clearTimeout(inactivityTimeout);
-  inactivityTimeout = setTimeout(() => {
-    alert("Sessão expirada por inatividade. Você será desconectado.");
-    logoutUser();
-  }, 60 * 60 * 1000); // 1 hora (3600000 ms)
-}
-
-// ✅ Exportar
+// ✅ Funções globais
 window.initMap = initMap;
 window.solicitarCarona = solicitarCarona;
