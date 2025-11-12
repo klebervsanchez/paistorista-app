@@ -40,23 +40,12 @@ function initMap() {
       window.location.href = "login.html";
     }
   });
-
-  // 📍 Eventos
-  document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
-  document.getElementById("btn-route")?.addEventListener("click", drawRoute);
-  document.getElementById("btn-save")?.addEventListener("click", saveRide);
-  document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
 }
 
 // 🚪 Função de logout
 function logoutUser() {
-  console.log("Tentando deslogar...");
-
   firebase.auth().signOut()
-    .then(() => {
-      console.log("Usuário deslogado");
-      window.location.href = "login.html";
-    })
+    .then(() => window.location.href = "login.html")
     .catch(err => {
       console.error("Erro ao sair:", err);
       alert("Erro ao fazer logout.");
@@ -221,3 +210,11 @@ function loadMyRequests() {
 // ✅ Funções globais
 window.initMap = initMap;
 window.solicitarCarona = solicitarCarona;
+
+// ✅ Eventos após carregamento da página
+window.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
+  document.getElementById("btn-route")?.addEventListener("click", drawRoute);
+  document.getElementById("btn-save")?.addEventListener("click", saveRide);
+  document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
+});
