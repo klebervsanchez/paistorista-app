@@ -23,18 +23,17 @@ function initMap() {
     new google.maps.places.Autocomplete(destinationInput);
   }
 
+  // 🔐 Autenticação
   firebase.auth().onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
       db = firebase.firestore();
 
-      if (document.getElementById("rides-list")) {
-        loadAvailableRides();
-      }
+      if (document.getElementById("rides-list")) loadAvailableRides();
+      if (document.getElementById("my-requests")) loadMyRequests();
 
-      if (document.getElementById("my-requests")) {
-        loadMyRequests();
-      }
+      // Iniciar o temporizador de inatividade após login
+      startInactivityTimer();
 
     } else {
       window.location.href = "login.html";
@@ -45,9 +44,20 @@ function initMap() {
   document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
   document.getElementById("btn-route")?.addEventListener("click", drawRoute);
   document.getElementById("btn-save")?.addEventListener("click", saveRide);
-  document.getElementById("btn-logout")?.addEventListener("click", () => {
-    firebase.auth().signOut().then(() => window.location.href = "login.html");
-  });
+  document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
+}
+
+// 🚪 Função de logout
+function logoutUser() {
+  firebase.auth().signOut()
+    .then(() => {
+      alert("Logout realizado com sucesso.");
+      window.location.href = "login.html";
+    })
+    .catch(err => {
+      console.error("Erro ao sair:", err);
+      alert("Erro ao fazer logout.");
+    });
 }
 
 // 📍 Localização
@@ -203,6 +213,25 @@ function loadMyRequests() {
       }
     });
   });
+}
+
+// ✅ AUTO LOGOUT POR INATIVIDADE
+let inactivityTimeout;
+
+function startInactivityTimer() {
+  resetInactivityTimer();
+
+  ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
+    window.addEventListener(event, resetInactivityTimer);
+  });
+}
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimeout);
+  inactivityTimeout = setTimeout(() => {
+    alert("Sessão expirada por inatividade. Você será desconectado.");
+    logoutUser();
+  }, 60 * 60 * 1000); // 1 hora (3600000 ms)
 }
 
 // ✅ Exportar
