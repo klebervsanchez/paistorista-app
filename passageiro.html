@@ -64,27 +64,5 @@
 
   <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
-  <!-- Script para listar escolas e ativar logout -->
-  <script type="module">
-    import { logoutUser } from './js/auth.js';
-
-    // Ativa botão sair
-    document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
-
-    // Listar escolas cadastradas
-    const db = firebase.firestore();
-    const schoolList = document.getElementById("school-list");
-
-    db.collection("escolas").get().then(snapshot => {
-      snapshot.forEach(doc => {
-        const escola = doc.data();
-        const li = document.createElement("li");
-        li.className = "collection-item";
-        li.innerHTML = `<strong>${escola.nome}</strong>`;
-        schoolList.appendChild(li);
-      });
-    });
-  </script>
 </body>
 </html>
