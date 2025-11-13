@@ -3,15 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <title>Redirecionando...</title>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
+
   <script defer>
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        window.location.href = "app.html";
+    firebase.auth().onAuthStateChanged(async user => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      const db = firebase.firestore();
+      const doc = await db.collection("usuarios").doc(user.uid).get();
+
+      if (doc.exists) {
+        const tipo = doc.data().tipo;
+        if (tipo === "motorista") {
+          window.location.href = "app.html";
+        } else {
+          window.location.href = "passageiro.html";
+        }
       } else {
+        // Se não houver tipo definido, redireciona para login
         window.location.href = "login.html";
       }
     });
