@@ -6,20 +6,23 @@ let db = null;
 function initMap() {
   const defaultPos = { lat: -23.55052, lng: -46.633308 };
 
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 13,
-    center: defaultPos,
-  });
+  const mapElement = document.getElementById("map");
+  if (mapElement) {
+    map = new google.maps.Map(mapElement, {
+      zoom: 13,
+      center: defaultPos,
+    });
 
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({ map });
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  const originInput = document.getElementById("origin");
-  const destinationInput = document.getElementById("destination");
+    const originInput = document.getElementById("origin");
+    const destinationInput = document.getElementById("destination");
 
-  if (originInput && destinationInput) {
-    new google.maps.places.Autocomplete(originInput);
-    new google.maps.places.Autocomplete(destinationInput);
+    if (originInput && destinationInput) {
+      new google.maps.places.Autocomplete(originInput);
+      new google.maps.places.Autocomplete(destinationInput);
+    }
   }
 
   firebase.auth().onAuthStateChanged(user => {
@@ -28,7 +31,6 @@ function initMap() {
       db = firebase.firestore();
 
       if (document.getElementById("school-list")) loadActiveSchools();
-      if (document.getElementById("rides-list")) loadAvailableRides();
       if (document.getElementById("my-requests")) loadMyRequests();
     } else {
       window.location.href = "login.html";
@@ -37,7 +39,7 @@ function initMap() {
 }
 
 // 🚪 Logout
-export function logoutUser() {
+function logoutUser() {
   firebase.auth().signOut()
     .then(() => window.location.href = "login.html")
     .catch(err => alert("Erro ao fazer logout."));
@@ -146,7 +148,7 @@ function loadActiveSchools() {
 }
 
 // 📋 Mostrar caronas por escola
-window.mostrarCaronasPorEscola = function(escolaSelecionada) {
+function mostrarCaronasPorEscola(escolaSelecionada) {
   const list = document.getElementById("rides-list");
   if (!list || !db) return;
 
@@ -169,7 +171,7 @@ window.mostrarCaronasPorEscola = function(escolaSelecionada) {
         list.appendChild(li);
       });
     });
-};
+}
 
 // 🙋 Solicitar carona
 function solicitarCarona(caronaId) {
@@ -231,11 +233,7 @@ function loadMyRequests() {
 // ✅ Funções globais
 window.initMap = initMap;
 window.solicitarCarona = solicitarCarona;
+window.mostrarCaronasPorEscola = mostrarCaronasPorEscola;
+window.logoutUser = logoutUser;
 
-// ✅ Eventos
-window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("btn-location")?.addEventListener("click", getCurrentLocation);
-  document.getElementById("btn-route")?.addEventListener("click", drawRoute);
-  document.getElementById("btn-save")?.addEventListener("click", saveRide);
-  document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
-});
+//
