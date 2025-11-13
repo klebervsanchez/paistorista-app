@@ -17,26 +17,50 @@
   <div class="card shadow p-4 text-center">
     <h2 class="mb-3">🚗 Paistorista</h2>
     <p>Organize caronas escolares com segurança</p>
-    <button class="btn btn-success" onclick="login()">
-      <i class="material-icons align-middle me-1">login</i>
-      Entrar com Google
-    </button>
+    <p class="mb-3">Escolha como deseja entrar:</p>
+
+    <div class="d-flex justify-content-center gap-3">
+      <button class="btn btn-primary" onclick="login('motorista')">
+        <i class="material-icons align-middle me-1">drive_eta</i>
+        Entrar como Motorista
+      </button>
+
+      <button class="btn btn-secondary" onclick="login('passageiro')">
+        <i class="material-icons align-middle me-1">group</i>
+        Entrar como Passageiro
+      </button>
+    </div>
   </div>
 
   <!-- ✅ Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" defer></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js" defer></script>
   <script src="firebase-config.js" defer></script>
 
   <!-- ✅ Script de login -->
   <script defer>
-    function login() {
+    function login(tipo) {
       const provider = new firebase.auth.GoogleAuthProvider();
 
       firebase.auth().signInWithPopup(provider)
         .then(result => {
-          alert("✅ Bem-vindo, " + result.user.displayName);
-          window.location.href = "index.html"; // ou "app.html" se preferir ir direto
+          const user = result.user;
+          const db = firebase.firestore();
+
+          // Salva ou atualiza o tipo de usuário
+          db.collection("usuarios").doc(user.uid).set({
+            nome: user.displayName,
+            email: user.email,
+            tipo: tipo
+          }, { merge: true });
+
+          // Redireciona para a página correta
+          if (tipo === "motorista") {
+            window.location.href = "app.html";
+          } else {
+            window.location.href = "passageiro.html";
+          }
         })
         .catch(error => {
           console.error("Erro no login:", error);
