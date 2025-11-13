@@ -14,7 +14,6 @@ function initMap() {
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({ map });
 
-  // 🧭 Autocomplete
   const originInput = document.getElementById("origin");
   const destinationInput = document.getElementById("destination");
 
@@ -28,13 +27,9 @@ function initMap() {
       currentUser = user;
       db = firebase.firestore();
 
-      if (document.getElementById("rides-list")) {
-        loadAvailableRides();
-      }
-
-      if (document.getElementById("my-requests")) {
-        loadMyRequests();
-      }
+      if (document.getElementById("rides-list")) loadAvailableRides();
+      if (document.getElementById("my-requests")) loadMyRequests();
+      if (document.getElementById("school-list")) loadSchools();
 
     } else {
       window.location.href = "login.html";
@@ -43,7 +38,7 @@ function initMap() {
 }
 
 // 🚪 Função de logout
-function logoutUser() {
+export function logoutUser() {
   firebase.auth().signOut()
     .then(() => window.location.href = "login.html")
     .catch(err => {
@@ -90,7 +85,7 @@ function drawRoute() {
   });
 }
 
-// 💾 Salvar carona
+// 💾 Salvar carona + escola
 function saveRide() {
   const origin = document.getElementById("origin")?.value.trim();
   const destination = document.getElementById("destination")?.value.trim();
@@ -105,6 +100,7 @@ function saveRide() {
     return alert("⚠️ Usuário não autenticado.");
   }
 
+  // Salvar carona
   db.collection("caronas").add({
     uid: currentUser.uid,
     motorista: currentUser.displayName || "Motorista",
@@ -121,6 +117,13 @@ function saveRide() {
   }).catch(err => {
     alert("❌ Erro ao salvar carona: " + err.message);
   });
+
+  // Salvar escola separadamente
+  db.collection("escolas").doc(schoolName).set({
+    nome: schoolName,
+    criadaPor: currentUser.uid,
+    dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
 }
 
 // 🧾 Listar caronas
@@ -133,7 +136,6 @@ function loadAvailableRides() {
       list.innerHTML = '<li class="collection-header"><h6>Caronas Ativas</h6></li>';
       snapshot.forEach(doc => {
         const carona = doc.data();
-
         if (carona.uid === currentUser?.uid) return;
 
         const li = document.createElement("li");
@@ -203,6 +205,22 @@ function loadMyRequests() {
         `;
         list.appendChild(li);
       }
+    });
+  });
+}
+
+// 🏫 Listar escolas
+function loadSchools() {
+  const list = document.getElementById("school-list");
+  if (!list || !db) return;
+
+  db.collection("escolas").get().then(snapshot => {
+    snapshot.forEach(doc => {
+      const escola = doc.data();
+      const li = document.createElement("li");
+      li.className = "collection-item";
+      li.innerHTML = `<strong>${escola.nome}</strong>`;
+      list.appendChild(li);
     });
   });
 }
