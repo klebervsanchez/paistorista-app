@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paistorista - Passageiro</title>
 
-  <!-- Materialize CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
@@ -17,7 +16,6 @@
 </head>
 <body class="grey lighten-4">
 
-  <!-- Navbar -->
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
       <a class="brand-logo"><i class="material-icons left">group</i> Paistorista - Passageiro</a>
@@ -32,40 +30,29 @@
   </nav>
 
   <main class="container section">
-    <!-- Escolas cadastradas -->
     <h5 class="blue-text text-darken-2">🏫 Escolas com caronas</h5>
     <ul id="school-list" class="collection with-header">
       <li class="collection-header"><h6>Lista de Escolas</h6></li>
     </ul>
 
-    <!-- Caronas disponíveis -->
     <h5 class="blue-text text-darken-2">🚗 Caronas disponíveis</h5>
     <ul id="rides-list" class="collection with-header">
       <li class="collection-header"><h6>Selecione uma escola para ver caronas</h6></li>
     </ul>
 
-    <!-- Minhas solicitações -->
     <h5 class="blue-text text-darken-2">📋 Minhas solicitações</h5>
     <ul id="my-requests" class="collection with-header">
       <li class="collection-header"><h6>Solicitações realizadas</h6></li>
     </ul>
   </main>
 
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
-
-  <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
-  <!-- Script principal -->
   <script src="js/main.js" type="module"></script>
 
-  <!-- Ativa logout manualmente -->
   <script type="module">
     import { logoutUser } from './js/main.js';
     document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
