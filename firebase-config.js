@@ -10,4 +10,5 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);  // Adicionado para persistir login entre sessões
 const db = firebase.firestore();
