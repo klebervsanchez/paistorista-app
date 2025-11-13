@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paistorista - Passageiro</title>
 
+  <!-- Materialize CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
 
@@ -17,6 +18,7 @@
 </head>
 <body class="grey lighten-4">
 
+  <!-- Navbar -->
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
       <a class="brand-logo">
@@ -33,11 +35,19 @@
   </nav>
 
   <main class="container section">
+    <!-- Escolas cadastradas -->
+    <h5 class="blue-text text-darken-2">🏫 Escolas cadastradas</h5>
+    <ul id="school-list" class="collection with-header">
+      <li class="collection-header"><h6>Lista de Escolas</h6></li>
+    </ul>
+
+    <!-- Caronas disponíveis -->
     <h5 class="blue-text text-darken-2">🚗 Caronas disponíveis</h5>
     <ul id="rides-list" class="collection with-header">
       <li class="collection-header"><h6>Caronas Ativas</h6></li>
     </ul>
 
+    <!-- Minhas solicitações -->
     <h5 class="blue-text text-darken-2">📋 Minhas solicitações</h5>
     <ul id="my-requests" class="collection with-header">
       <li class="collection-header"><h6>Solicitações realizadas</h6></li>
@@ -55,11 +65,30 @@
   <!-- Script principal -->
   <script src="js/main.js" type="module"></script>
 
-  <!-- Google Maps API -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&libraries=places&callback=initMap"></script>
-
   <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <!-- Script para listar escolas -->
+  <script type="module">
+    import { logoutUser } from './js/auth.js';
+
+    // Ativa botão sair
+    document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
+
+    // Firebase init
+    const db = firebase.firestore();
+
+    // Listar escolas
+    const schoolList = document.getElementById("school-list");
+    db.collection("escolas").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const escola = doc.data();
+        const li = document.createElement("li");
+        li.className = "collection-item";
+        li.innerHTML = `<strong>${escola.nome}</strong><br>${escola.endereco || ''}`;
+        schoolList.appendChild(li);
+      });
+    });
+  </script>
 </body>
 </html>
-
