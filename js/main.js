@@ -99,7 +99,7 @@ async function loadPassengerPage(user) {
           const li = document.createElement('li');
           li.classList.add('collection-item');
           li.innerHTML = `
-            <div>Motorista: ${ride.motorista} | Vagas: ${ride.vagas}
+            <div>Motorista: ${ride.motorista} | Vagas: ${ride.vagas} | Horário: ${ride.horario || 'Não especificado'}
               <a href="#!" class="secondary-content" onclick="requestRide('${doc.id}')"><i class="material-icons">add_circle</i></a>
             </div>
           `;
@@ -241,8 +241,9 @@ async function loadDriverPage(user) {
     const seats = parseInt(document.getElementById('seats').value);
     const origin = document.getElementById('origin').value;
     const destination = document.getElementById('destination').value;
+    const time = document.getElementById('time').value;
 
-    if (!school || !seats || !origin || !destination) {
+    if (!school || !seats || !origin || !destination || !time) {
       alert('⚠️ Preencha todos os campos.');
       return;
     }
@@ -256,6 +257,7 @@ async function loadDriverPage(user) {
         vagasDisponiveis: seats,  // Campo extra se precisar
         origem: origin,
         destino: destination,
+        horario: time,
         dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'ativa',
         solicitacoes: []  // Inicializa como array vazio para solicitações
@@ -266,6 +268,7 @@ async function loadDriverPage(user) {
       document.getElementById('seats').value = '';
       document.getElementById('origin').value = '';
       document.getElementById('destination').value = '';
+      document.getElementById('time').value = '';
       M.updateTextFields();
     } catch (error) {
       alert('⚠️ Erro ao salvar: ' + error.message);
