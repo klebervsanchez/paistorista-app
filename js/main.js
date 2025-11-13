@@ -50,41 +50,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Função para carregar página de passageiro
 async function loadPassengerPage(user) {
-  // Carregar lista de escolas (assumindo coleção 'escolas')
   const schoolList = document.getElementById('school-list');
-  const schoolsSnapshot = await db.collection('escolas').get();
-  schoolsSnapshot.forEach(doc => {
-    const school = doc.data();
-    const li = document.createElement('li');
-    li.classList.add('collection-item');
-    li.innerHTML = `
-      <div>${school.nome} <span class="secondary-content"><i class="material-icons">school</i></span></div>
-    `;
-    li.addEventListener('click', () => loadRidesForSchool(doc.id));
-    schoolList.appendChild(li);
-  });
+  const ridesList = document.getElementById('rides-list');
+  const myRequests = document.getElementById('my-requests');
 
-  // Função para carregar caronas de uma escola específica
-  async function loadRidesForSchool(schoolId) {
-    const ridesList = document.getElementById('rides-list');
-    ridesList.innerHTML = '<li class="collection-header"><h6>Caronas para esta escola</h6></li>'; // Limpa lista
-
-    const ridesSnapshot = await db.collection('caronas')
-      .where('escolaId', '==', schoolId)
-      .where('vagas', '>', 0) // Apenas caronas com vagas disponíveis
-      .get();
-
-    ridesSnapshot.forEach(doc => {
-      const ride = doc.data();
+  // Listener em tempo real para escolas
+  db.collection('escolas').onSnapshot(snapshot => {
+    schoolList.innerHTML = '<li class="collection-header"><h6>Lista de Escolas</h6></li>'; // Limpa lista
+    snapshot.forEach(doc => {
+      const school = doc.data();
       const li = document.createElement('li');
       li.classList.add('collection-item');
       li.innerHTML = `
-        <div>Motorista: ${ride.motoristaNome} | Vagas: ${ride.vagas}
-          <a href="#!" class="secondary-content" onclick="requestRide('${doc.id}')"><i class="material-icons">add_circle</i></a>
-        </div>
+        <div>${school.nome} <span class="secondary-content"><i class="material-icons">school</i></span></div>
       `;
-      ridesList.appendChild(li);
+      li.addEventListener('click', () => loadRidesForSchool(doc.id));
+      schoolList.appendChild(li);
     });
+  });
+
+  let unsubscribeRides; // Para cancelar listener anterior de caronas
+
+  // Função para carregar e escutar caronas de uma escola específica em tempo real
+  function loadRidesForSchool(schoolId) {
+    if (unsubscribeRides) unsubscribeRides(); // Cancela listener anterior
+
+    ridesList.innerHTML = '<li class="collection-header"><h6>Caronas para esta escola</h6></li>'; // Limpa lista
+
+    unsubscribeRides = db.collection('caronas')
+      .where('escolaId', '==', schoolId)
+      .where('vagas', '>', 0)
+      .onSnapshot(snapshot => {
+        // Limpa itens existentes (exceto header)
+        while (ridesList.children.length > 1) {
+          ridesList.removeChild(ridesList.lastChild);
+        }
+
+        snapshot.forEach(doc => {
+          const ride = doc.data();
+          const li = document.createElement('li');
+          li.classList.add('collection-item');
+          li.innerHTML = `
+            <div>Motorista: ${ride.motoristaNome} | Vagas: ${ride.vagas}
+              <a href="#!" class="secondary-content" onclick="requestRide('${doc.id}')"><i class="material-icons">add_circle</i></a>
+            </div>
+          `;
+          ridesList.appendChild(li);
+        });
+      });
   }
 
   // Função para solicitar carona
@@ -97,31 +110,28 @@ async function loadPassengerPage(user) {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
       alert('✅ Solicitação enviada!');
-      loadMyRequests(); // Atualiza lista de solicitações
+      // Não precisa recarregar manualmente, pois listener cuida
     } catch (error) {
       alert('⚠️ Erro ao solicitar: ' + error.message);
     }
   };
 
-  // Carregar minhas solicitações
-  async function loadMyRequests() {
-    const myRequests = document.getElementById('my-requests');
-    myRequests.innerHTML = '<li class="collection-header"><h6>Solicitações realizadas</h6></li>'; // Limpa
+  let unsubscribeRequests; // Para listener de solicitações
 
-    const requestsSnapshot = await db.collection('solicitacoes')
-      .where('passageiroId', '==', user.uid)
-      .get();
+  // Listener em tempo real para minhas solicitações
+  unsubscribeRequests = db.collection('solicitacoes')
+    .where('passageiroId', '==', user.uid)
+    .onSnapshot(snapshot => {
+      myRequests.innerHTML = '<li class="collection-header"><h6>Solicitações realizadas</h6></li>'; // Limpa
 
-    requestsSnapshot.forEach(doc => {
-      const req = doc.data();
-      const li = document.createElement('li');
-      li.classList.add('collection-item');
-      li.innerHTML = `Carona ID: ${req.rideId} | Status: ${req.status}`;
-      myRequests.appendChild(li);
+      snapshot.forEach(doc => {
+        const req = doc.data();
+        const li = document.createElement('li');
+        li.classList.add('collection-item');
+        li.innerHTML = `Carona ID: ${req.rideId} | Status: ${req.status}`;
+        myRequests.appendChild(li);
+      });
     });
-  }
-
-  loadMyRequests(); // Carrega ao iniciar
 }
 
 // Função para carregar página de motorista
@@ -191,8 +201,14 @@ async function loadDriverPage(user) {
     }
 
     try {
-      // Salva escola se não existir (opcional, assumindo coleção 'escolas')
-      const schoolRef = await db.collection('escolas').add({ nome: school });
+      // Verifica se a escola já existe; se não, cria
+      let schoolRef;
+      const schoolsQuery = await db.collection('escolas').where('nome', '==', school).get();
+      if (schoolsQuery.empty) {
+        schoolRef = await db.collection('escolas').add({ nome: school });
+      } else {
+        schoolRef = schoolsQuery.docs[0].ref;
+      }
 
       // Salva carona
       await db.collection('caronas').add({
