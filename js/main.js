@@ -153,7 +153,7 @@ async function loadPassengerPage(user) {
 
 // Função para carregar página de motorista
 async function loadDriverPage(user) {
-  let map, directionsService, directionsRenderer;
+  let map, directionsService, directionsRenderer, geocoder;
 
   // Inicializa o mapa (callback do Google Maps)
   window.initMap = function() {
@@ -164,6 +164,7 @@ async function loadDriverPage(user) {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
+    geocoder = new google.maps.Geocoder(); // Inicializa o Geocoder
   };
 
   if (typeof window.initMap === 'function') window.initMap();
@@ -173,8 +174,21 @@ async function loadDriverPage(user) {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
-        document.getElementById('origin').value = `${latitude}, ${longitude}`;
-        M.updateTextFields(); // Atualiza label do Materialize
+        const latlng = new google.maps.LatLng(latitude, longitude);
+
+        // Usa reverse geocoding para obter o endereço
+        geocoder.geocode({ location: latlng }, (results, status) => {
+          if (status === 'OK') {
+            if (results[0]) {
+              document.getElementById('origin').value = results[0].formatted_address;
+              M.updateTextFields(); // Atualiza label do Materialize
+            } else {
+              alert('⚠️ Nenhum resultado encontrado.');
+            }
+          } else {
+            alert('⚠️ Erro no geocoding: ' + status);
+          }
+        });
       }, error => {
         alert('⚠️ Erro ao obter localização: ' + error.message);
       });
