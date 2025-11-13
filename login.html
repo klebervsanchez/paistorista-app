@@ -38,13 +38,13 @@
             nome: user.displayName,
             email: user.email,
             tipo: tipo
-          }, { merge: true });
-
-          if (tipo === "motorista") {
-            window.location.href = "app.html";
-          } else {
-            window.location.href = "passageiro.html";
-          }
+          }, { merge: true })
+          .then(() => {
+            window.location.href = "index.html";  // Redireciona para index.html
+          })
+          .catch(error => {
+            alert("⚠️ Erro ao salvar dados: " + error.message);
+          });
         })
         .catch(error => {
           alert("⚠️ Erro ao autenticar: " + error.message);
