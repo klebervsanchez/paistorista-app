@@ -17,6 +17,18 @@
 </head>
 <body class="grey lighten-4">
 
+  <!-- Loading Spinner -->
+  <div id="loading" class="center-align" style="margin-top: 20px;">
+    <div class="preloader-wrapper big active">
+      <div class="spinner-layer spinner-blue-only">
+        <div class="circle-clipper left"><div class="circle"></div></div>
+        <div class="gap-patch"><div class="circle"></div></div>
+        <div class="circle-clipper right"><div class="circle"></div></div>
+      </div>
+    </div>
+    <p>Carregando...</p>
+  </div>
+
   <!-- Navbar -->
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
@@ -31,8 +43,8 @@
     </div>
   </nav>
 
-  <main class="container section">
-    <!-- Escolas com caronas -->
+  <main class="container section" style="display: none;">
+    <!-- Escolas cadastradas -->
     <h5 class="blue-text text-darken-2">🏫 Escolas com caronas</h5>
     <ul id="school-list" class="collection with-header">
       <li class="collection-header"><h6>Lista de Escolas</h6></li>
@@ -65,17 +77,11 @@
   <!-- Script principal -->
   <script src="js/main.js" type="module"></script>
 
-  <!-- Ativa funções globais -->
+  <!-- Ativa logout manualmente -->
   <script type="module">
     import { logoutUser } from './js/main.js';
-
-    // Ativa botão "Sair"
     document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
-
-    // Chama initMap para carregar dados do passageiro
-    if (typeof window.initMap === "function") {
-      window.initMap();
-    }
+    if (typeof window.initMap === "function") window.initMap();
   </script>
 </body>
 </html>
