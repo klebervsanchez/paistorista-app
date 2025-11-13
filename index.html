@@ -17,18 +17,27 @@
         return;
       }
 
-      const db = firebase.firestore();
-      const doc = await db.collection("usuarios").doc(user.uid).get();
+      try {
+        const db = firebase.firestore();
+        const doc = await db.collection("usuarios").doc(user.uid).get();
 
-      if (doc.exists) {
-        const tipo = doc.data().tipo;
-        if (tipo === "motorista") {
-          window.location.href = "app.html";
+        if (doc.exists) {
+          const tipo = doc.data().tipo;
+          if (tipo === "motorista") {
+            window.location.href = "app.html";
+          } else if (tipo === "passageiro") {
+            window.location.href = "passageiro.html";
+          } else {
+            throw new Error("Tipo de usuário inválido.");
+          }
         } else {
-          window.location.href = "passageiro.html";
+          // Se doc não existe, pode ser race condition; espere um pouco e tente de novo
+          setTimeout(() => window.location.reload(), 1000);  // Retry após 1s
         }
-      } else {
-        // Se não houver tipo definido, redireciona para login
+      } catch (error) {
+        console.error("Erro ao carregar tipo:", error);
+        alert("⚠️ Erro ao carregar perfil. Tente novamente.");
+        firebase.auth().signOut();
         window.location.href = "login.html";
       }
     });
