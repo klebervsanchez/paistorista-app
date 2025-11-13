@@ -54,31 +54,39 @@ async function loadPassengerPage(user) {
   const ridesList = document.getElementById('rides-list');
   const myRequests = document.getElementById('my-requests');
 
-  // Listener em tempo real para escolas
-  db.collection('escolas').onSnapshot(snapshot => {
-    schoolList.innerHTML = '<li class="collection-header"><h6>Lista de Escolas</h6></li>'; // Limpa lista
+  // Listener em tempo real para caronas, para extrair escolas únicas
+  db.collection('caronas').onSnapshot(snapshot => {
+    const schools = new Set(); // Usar Set para nomes únicos de escolas
     snapshot.forEach(doc => {
-      const school = doc.data();
+      const ride = doc.data();
+      if (ride.escola && ride.vagas > 0) {
+        schools.add(ride.escola); // Adiciona nome da escola se houver vagas
+      }
+    });
+
+    // Limpa e popula lista de escolas
+    schoolList.innerHTML = '<li class="collection-header"><h6>Lista de Escolas</h6></li>';
+    schools.forEach(schoolName => {
       const li = document.createElement('li');
       li.classList.add('collection-item');
       li.innerHTML = `
-        <div>${school.nome} <span class="secondary-content"><i class="material-icons">school</i></span></div>
+        <div>${schoolName} <span class="secondary-content"><i class="material-icons">school</i></span></div>
       `;
-      li.addEventListener('click', () => loadRidesForSchool(doc.id));
+      li.addEventListener('click', () => loadRidesForSchool(schoolName));
       schoolList.appendChild(li);
     });
   });
 
   let unsubscribeRides; // Para cancelar listener anterior de caronas
 
-  // Função para carregar e escutar caronas de uma escola específica em tempo real
-  function loadRidesForSchool(schoolId) {
+  // Função para carregar e escutar caronas de uma escola específica em tempo real (por nome da escola)
+  function loadRidesForSchool(schoolName) {
     if (unsubscribeRides) unsubscribeRides(); // Cancela listener anterior
 
     ridesList.innerHTML = '<li class="collection-header"><h6>Caronas para esta escola</h6></li>'; // Limpa lista
 
     unsubscribeRides = db.collection('caronas')
-      .where('escolaId', '==', schoolId)
+      .where('escola', '==', schoolName)
       .where('vagas', '>', 0)
       .onSnapshot(snapshot => {
         // Limpa itens existentes (exceto header)
@@ -91,7 +99,7 @@ async function loadPassengerPage(user) {
           const li = document.createElement('li');
           li.classList.add('collection-item');
           li.innerHTML = `
-            <div>Motorista: ${ride.motoristaNome} | Vagas: ${ride.vagas}
+            <div>Motorista: ${ride.motorista} | Vagas: ${ride.vagas}
               <a href="#!" class="secondary-content" onclick="requestRide('${doc.id}')"><i class="material-icons">add_circle</i></a>
             </div>
           `;
@@ -103,23 +111,32 @@ async function loadPassengerPage(user) {
   // Função para solicitar carona
   window.requestRide = async function(rideId) {
     try {
+      // Adiciona solicitação como documento separado
       await db.collection('solicitacoes').add({
         passageiroId: user.uid,
         rideId,
         status: 'pendente',
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
+
+      // Atualiza a carona para decrementar vagas (opcional, se quiser gerenciar vagas)
+      const rideRef = db.collection('caronas').doc(rideId);
+      await db.runTransaction(async (transaction) => {
+        const rideDoc = await transaction.get(rideRef);
+        if (!rideDoc.exists) throw "Carona não existe";
+        const newVagas = rideDoc.data().vagas - 1;
+        if (newVagas < 0) throw "Sem vagas disponíveis";
+        transaction.update(rideRef, { vagas: newVagas });
+      });
+
       alert('✅ Solicitação enviada!');
-      // Não precisa recarregar manualmente, pois listener cuida
     } catch (error) {
       alert('⚠️ Erro ao solicitar: ' + error.message);
     }
   };
 
-  let unsubscribeRequests; // Para listener de solicitações
-
   // Listener em tempo real para minhas solicitações
-  unsubscribeRequests = db.collection('solicitacoes')
+  db.collection('solicitacoes')
     .where('passageiroId', '==', user.uid)
     .onSnapshot(snapshot => {
       myRequests.innerHTML = '<li class="collection-header"><h6>Solicitações realizadas</h6></li>'; // Limpa
@@ -188,7 +205,7 @@ async function loadDriverPage(user) {
     });
   });
 
-  // Botão para salvar carona
+  // Botão para salvar carona (ajustado para estrutura do seu Firebase)
   document.getElementById('btn-save').addEventListener('click', async () => {
     const school = document.getElementById('school').value;
     const seats = parseInt(document.getElementById('seats').value);
@@ -201,24 +218,17 @@ async function loadDriverPage(user) {
     }
 
     try {
-      // Verifica se a escola já existe; se não, cria
-      let schoolRef;
-      const schoolsQuery = await db.collection('escolas').where('nome', '==', school).get();
-      if (schoolsQuery.empty) {
-        schoolRef = await db.collection('escolas').add({ nome: school });
-      } else {
-        schoolRef = schoolsQuery.docs[0].ref;
-      }
-
-      // Salva carona
       await db.collection('caronas').add({
-        escolaId: schoolRef.id,
-        motoristaId: user.uid,
-        motoristaNome: user.displayName,
+        escola: school,  // Salva como string (nome da escola)
+        motorista: user.displayName,
+        uid: user.uid,
         vagas: seats,
+        vagasDisponiveis: seats,  // Campo extra se precisar
         origem: origin,
         destino: destination,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'ativa',
+        solicitacoes: []  // Inicializa como array vazio para solicitações
       });
       alert('✅ Carona salva com sucesso!');
       // Limpa formulário
