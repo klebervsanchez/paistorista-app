@@ -64,5 +64,18 @@
 
   <!-- Materialize JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <!-- Correções: ativar logout e carregar mapa -->
+  <script type="module">
+    import { logoutUser } from './js/main.js';
+
+    // Ativa o botão "Sair"
+    document.getElementById("btn-logout")?.addEventListener("click", logoutUser);
+
+    // Garante que initMap seja chamado (ativa loadSchools, loadAvailableRides, etc.)
+    if (typeof window.initMap === "function") {
+      window.initMap();
+    }
+  </script>
 </body>
 </html>
