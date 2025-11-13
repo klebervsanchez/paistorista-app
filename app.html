@@ -4,47 +4,79 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Paistorista - Motorista</title>
+
+  <!-- Materialize CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
   <style>
     #map { height: 500px; width: 100%; }
     .btn-logout { margin-left: auto; }
   </style>
 </head>
 <body class="grey lighten-4">
+
+  <!-- Navbar -->
   <nav class="blue darken-2">
     <div class="nav-wrapper container">
       <a href="#!" class="brand-logo"><i class="material-icons left">directions_car</i> Paistorista</a>
       <ul class="right">
-        <li><button id="btn-logout" class="btn red lighten-1 waves-effect btn-logout"><i class="material-icons left">exit_to_app</i> Sair</button></li>
+        <li>
+          <button id="btn-logout" class="btn red lighten-1 waves-effect btn-logout">
+            <i class="material-icons left">exit_to_app</i> Sair
+          </button>
+        </li>
       </ul>
     </div>
   </nav>
 
+  <!-- Formulário de carona -->
   <main class="container section">
     <div class="row">
-      <div class="input-field col s12 m6"><input id="school" type="text"><label for="school">Nome da Escola</label></div>
-      <div class="input-field col s12 m6"><input id="seats" type="number"><label for="seats">Vagas disponíveis</label></div>
+      <div class="input-field col s12 m6">
+        <input id="school" type="text">
+        <label for="school">Nome da Escola</label>
+      </div>
+      <div class="input-field col s12 m6">
+        <input id="seats" type="number">
+        <label for="seats">Vagas disponíveis</label>
+      </div>
     </div>
     <div class="row">
-      <div class="input-field col s12 m6"><input id="origin" type="text"><label for="origin">Endereço de origem</label></div>
-      <div class="input-field col s12 m6"><input id="destination" type="text"><label for="destination">Endereço de destino</label></div>
+      <div class="input-field col s12 m6">
+        <input id="origin" type="text">
+        <label for="origin">Endereço de origem</label>
+      </div>
+      <div class="input-field col s12 m6">
+        <input id="destination" type="text">
+        <label for="destination">Endereço de destino</label>
+      </div>
     </div>
     <div class="row">
       <button id="btn-location" class="btn teal">Usar localização atual</button>
       <button id="btn-route" class="btn blue">Traçar rota</button>
       <button id="btn-save" class="btn green">Salvar carona</button>
     </div>
-    <div class="card"><div id="map"></div></div>
+    <div class="card">
+      <div id="map"></div>
+    </div>
   </main>
 
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="js/main.js" type="module"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&libraries=places&callback=initMap" async defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-</body>
 
+  <!-- Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Materialize JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+  <!-- Script principal -->
+  <script src="js/main.js" type="module"></script>
+
+  <!-- Google Maps API -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7hhgt206uwd-Ogajk7AWPmFwRDmoSJA&libraries=places&callback=initMap" async defer></script>
+</body>
 </html>
