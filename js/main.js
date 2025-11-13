@@ -153,7 +153,7 @@ async function loadPassengerPage(user) {
 
 // Função para carregar página de motorista
 async function loadDriverPage(user) {
-  let map, directionsService, directionsRenderer, geocoder;
+  let map, directionsService, directionsRenderer, geocoder, currentMarker;
 
   // Inicializa o mapa (callback do Google Maps)
   window.initMap = function() {
@@ -182,6 +182,22 @@ async function loadDriverPage(user) {
             if (results[0]) {
               document.getElementById('origin').value = results[0].formatted_address;
               M.updateTextFields(); // Atualiza label do Materialize
+
+              // Atualiza o mapa: centraliza e adiciona marcador
+              map.setCenter(latlng);
+              map.setZoom(15); // Aumenta o zoom para focar na localização
+
+              // Remove marcador anterior se existir
+              if (currentMarker) {
+                currentMarker.setMap(null);
+              }
+
+              // Adiciona novo marcador
+              currentMarker = new google.maps.Marker({
+                position: latlng,
+                map: map,
+                title: 'Localização Atual'
+              });
             } else {
               alert('⚠️ Nenhum resultado encontrado.');
             }
