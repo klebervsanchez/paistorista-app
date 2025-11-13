@@ -1,4 +1,3 @@
-// firebase-config.js
 const firebaseConfig = {
   apiKey: "AIzaSyCT9QQ9-AUvngXp0c_7l9yQXpDk1seAgmw",
   authDomain: "paistorista-57706.firebaseapp.com",
@@ -12,4 +11,3 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
