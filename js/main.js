@@ -48,6 +48,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     showLoading(false);  // Esconde loading após carregar
+
+    // Atualiza a página a cada 5 segundos (para ambas as telas)
+    setInterval(() => {
+      location.reload();
+    }, 5000);
   });
 });
 
