@@ -25,6 +25,9 @@ function showLoading(show) {
   }
 }
 
+// Tempo limite para resposta (5 minutos em ms)
+const REQUEST_TIMEOUT = 5 * 60 * 1000;
+
 // Lógica geral: Espera auth state em todas as páginas protegidas
 document.addEventListener('DOMContentLoaded', () => {
   showLoading(true);  // Mostra loading inicialmente
@@ -111,27 +114,37 @@ async function loadPassengerPage(user) {
   // Função para solicitar carona
   window.requestRide = async function(rideId) {
     try {
-      // Adiciona solicitação como documento separado
+      const rideDoc = await db.collection('caronas').doc(rideId).get();
+      if (!rideDoc.exists) throw "Carona não existe";
+      const rideData = rideDoc.data();
+
+      if (rideData.vagas <= 0) throw "Sem vagas disponíveis";
+
+      // Adiciona solicitação
       await db.collection('solicitacoes').add({
         passageiroId: user.uid,
+        passageiroNome: user.displayName,
         rideId,
+        motoristaId: rideData.uid,
         status: 'pendente',
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Atualiza a carona para decrementar vagas (opcional, se quiser gerenciar vagas)
-      const rideRef = db.collection('caronas').doc(rideId);
-      await db.runTransaction(async (transaction) => {
-        const rideDoc = await transaction.get(rideRef);
-        if (!rideDoc.exists) throw "Carona não existe";
-        const newVagas = rideDoc.data().vagas - 1;
-        if (newVagas < 0) throw "Sem vagas disponíveis";
-        transaction.update(rideRef, { vagas: newVagas });
-      });
+      alert('✅ Solicitação enviada! Aguarde a resposta do motorista.');
 
-      alert('✅ Solicitação enviada!');
+      // Inicia timer para cancelamento automático (lógica no lado do servidor seria melhor, mas simulando aqui)
+      setTimeout(async () => {
+        const reqSnap = await db.collection('solicitacoes').where('rideId', '==', rideId).where('passageiroId', '==', user.uid).get();
+        if (!reqSnap.empty) {
+          const reqDoc = reqSnap.docs[0];
+          if (reqDoc.data().status === 'pendente') {
+            await reqDoc.ref.update({ status: 'cancelada' });
+            alert('⚠️ Solicitação cancelada por falta de resposta.');
+          }
+        }
+      }, REQUEST_TIMEOUT);
     } catch (error) {
-      alert('⚠️ Erro ao solicitar: ' + error.message);
+      alert('⚠️ Erro ao solicitar: ' + error.message || error);
     }
   };
 
@@ -146,6 +159,9 @@ async function loadPassengerPage(user) {
         const li = document.createElement('li');
         li.classList.add('collection-item');
         li.innerHTML = `Carona ID: ${req.rideId} | Status: ${req.status}`;
+        if (req.status === 'aceita') {
+          li.innerHTML += ` | Motorista: ${req.motoristaNome || 'N/A'} | Horário: ${req.horario || 'N/A'}`;
+        }
         myRequests.appendChild(li);
       });
     });
@@ -235,7 +251,7 @@ async function loadDriverPage(user) {
     });
   });
 
-  // Botão para salvar carona (ajustado para estrutura do seu Firebase)
+  // Botão para salvar carona
   document.getElementById('btn-save').addEventListener('click', async () => {
     const school = document.getElementById('school').value;
     const seats = parseInt(document.getElementById('seats').value);
@@ -250,17 +266,17 @@ async function loadDriverPage(user) {
 
     try {
       await db.collection('caronas').add({
-        escola: school,  // Salva como string (nome da escola)
+        escola: school,
         motorista: user.displayName,
         uid: user.uid,
         vagas: seats,
-        vagasDisponiveis: seats,  // Campo extra se precisar
+        vagasDisponiveis: seats,
         origem: origin,
         destino: destination,
         horario: time,
         dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
         status: 'ativa',
-        solicitacoes: []  // Inicializa como array vazio para solicitações
+        solicitacoes: []
       });
       alert('✅ Carona salva com sucesso!');
       // Limpa formulário
@@ -274,7 +290,81 @@ async function loadDriverPage(user) {
       alert('⚠️ Erro ao salvar: ' + error.message);
     }
   });
+
+  // Carregar minhas caronas
+  const myRides = document.getElementById('my-rides');
+  db.collection('caronas')
+    .where('uid', '==', user.uid)
+    .onSnapshot(snapshot => {
+      myRides.innerHTML = '<li class="collection-header"><h6>Suas caronas cadastradas</h6></li>'; // Limpa
+
+      snapshot.forEach(doc => {
+        const ride = doc.data();
+        const li = document.createElement('li');
+        li.classList.add('collection-item');
+        li.innerHTML = `Escola: ${ride.escola} | Vagas: ${ride.vagas} | Horário: ${ride.horario}`;
+        myRides.appendChild(li);
+      });
+    });
+
+  // Carregar solicitações pendentes
+  const pendingRequests = document.getElementById('pending-requests');
+  db.collection('solicitacoes')
+    .where('motoristaId', '==', user.uid)
+    .where('status', '==', 'pendente')
+    .onSnapshot(snapshot => {
+      pendingRequests.innerHTML = '<li class="collection-header"><h6>Solicitações para suas caronas</h6></li>'; // Limpa
+
+      snapshot.forEach(doc => {
+        const req = doc.data();
+        const li = document.createElement('li');
+        li.classList.add('collection-item');
+        li.innerHTML = `Passageiro: ${req.passageiroNome} | Carona ID: ${req.rideId}
+          <a href="#!" class="secondary-content" onclick="acceptRequest('${doc.id}', '${req.rideId}')"><i class="material-icons green-text">check</i></a>
+          <a href="#!" class="secondary-content" onclick="rejectRequest('${doc.id}')"><i class="material-icons red-text">close</i></a>
+        `;
+        pendingRequests.appendChild(li);
+
+        // Verifica timeout
+        const timestamp = req.timestamp.toMillis();
+        const elapsed = Date.now() - timestamp;
+        if (elapsed > REQUEST_TIMEOUT) {
+          doc.ref.update({ status: 'cancelada' });
+        }
+      });
+    });
 }
+
+// Funções para aceitar/recusar solicitação
+window.acceptRequest = async function(reqId, rideId) {
+  try {
+    const reqRef = db.collection('solicitacoes').doc(reqId);
+    const rideRef = db.collection('caronas').doc(rideId);
+
+    await db.runTransaction(async (transaction) => {
+      const rideDoc = await transaction.get(rideRef);
+      if (!rideDoc.exists) throw "Carona não existe";
+      const newVagas = rideDoc.data().vagas - 1;
+      if (newVagas < 0) throw "Sem vagas disponíveis";
+
+      transaction.update(rideRef, { vagas: newVagas });
+      transaction.update(reqRef, { status: 'aceita' });
+    });
+
+    alert('✅ Solicitação aceita!');
+  } catch (error) {
+    alert('⚠️ Erro ao aceitar: ' + error.message || error);
+  }
+};
+
+window.rejectRequest = async function(reqId) {
+  try {
+    await db.collection('solicitacoes').doc(reqId).update({ status: 'recusada' });
+    alert('✅ Solicitação recusada.');
+  } catch (error) {
+    alert('⚠️ Erro ao recusar: ' + error.message);
+  }
+};
 
 // Listener de logout
 document.getElementById('btn-logout')?.addEventListener('click', logoutUser);
