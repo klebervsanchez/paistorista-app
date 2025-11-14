@@ -131,6 +131,8 @@ async function loadPassengerPage(user) {
         passageiroNome: user.displayName,
         rideId,
         motoristaId: rideData.uid,
+        motoristaNome: rideData.motorista,
+        horario: rideData.horario,
         status: 'pendente',
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -163,9 +165,9 @@ async function loadPassengerPage(user) {
         const req = doc.data();
         const li = document.createElement('li');
         li.classList.add('collection-item');
-        li.innerHTML = `Carona ID: ${req.rideId} | Status: ${req.status}`;
+        li.innerHTML = `Carona ID: ${req.rideId} | Motorista: ${req.motoristaNome || 'N/A'} | Status: ${req.status}`;
         if (req.status === 'aceita') {
-          li.innerHTML += ` | Motorista: ${req.motoristaNome || 'N/A'} | Horário: ${req.horario || 'N/A'}`;
+          li.innerHTML += ` | Horário: ${req.horario || 'N/A'}`;
         }
         myRequests.appendChild(li);
       });
