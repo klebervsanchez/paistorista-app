@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Atualiza a página a cada 5 segundos (para ambas as telas)
     setInterval(() => {
       location.reload();
-    }, 5000);
+    }, 50000);
   });
 });
 
@@ -375,3 +375,4 @@ window.rejectRequest = async function(reqId) {
 
 // Listener de logout
 document.getElementById('btn-logout')?.addEventListener('click', logoutUser);
+
